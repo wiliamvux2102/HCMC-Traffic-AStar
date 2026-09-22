@@ -1,0 +1,4 @@
+time,road_id,traffic_level
+08:00,A-B,0.8
+08:00,A-C,0.7
+12:00,B-C,0.4
