@@ -53,18 +53,34 @@ def export_graph():
 
     edges_df = edges.reset_index()
 
-    edges_df = edges_df[
-        ["u", "v", "key", "length"]
+    wanted_columns = [
+        "u",
+        "v",
+        "key",
+        "length",
+        "highway",
+        "oneway",
+        "maxspeed",
+        "geometry"
     ]
 
+    # Chỉ lấy những cột thực sự tồn tại trong graph
+    available_columns = [
+        col for col in wanted_columns
+        if col in edges_df.columns
+    ]
+
+    edges_df = edges_df[available_columns]
+
     edges_df = edges_df.rename(
-        columns={
-            "u": "source",
-            "v": "target",
-            "key": "edge_key",
-            "length": "distance"
-        }
-    )
+    columns={
+        "u": "source",
+        "v": "target",
+        "key": "edge_key",
+        "length": "distance_m",
+        "maxspeed": "maxspeed_raw"
+    }
+)
 
     edges_df.to_csv(
         OUTPUT_DIR / "edges.csv",
