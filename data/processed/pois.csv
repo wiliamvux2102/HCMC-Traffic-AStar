@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 poi_id,name,category,latitude,longitude
 POI0001,Trường Đại học Thể dục Thể thao Thành phố Hồ Chí Minh,university,10.872005191575639,106.79574974399902
 POI0002,Trường Đại học Giao thông Vận tải Thành phố Hồ Chí Minh,university,10.804873482050835,106.71676444575282
@@ -160,21 +159,3 @@ POI0157,Nhà xe Thiện Thành,bus_station,10.787501999999996,106.6379096
 POI0158,Bến xe Thành Bưởi - Hàng Xanh,bus_station,10.798576300000002,106.7184993
 POI0159,Huy Hoàng Limousine,bus_station,10.767944399999998,106.6983944
 POI0160,Nhà xe Thành Bưởi Lê Hồng Phong,bus_station,10.761739599999997,106.67696990000002
-=======
-id,name,category,latitude,longitude,nearest_node,snap_distance_m
-1,Đại học Bách Khoa,University,10.7725,106.6578,1,15.2
-2,Đại học Khoa học Tự nhiên,University,10.7626,106.6822,16,32.1
-3,Đại học Kinh tế TP.HCM,University,10.7806,106.6958,17,45.0
-4,Bệnh viện Chợ Rẫy,Hospital,10.7570,106.6594,4,28.5
-5,Bệnh viện Nhi Đồng 1,Hospital,10.7684,106.6823,15,51.3
-6,Vincom Center Đồng Khởi,ShoppingMall,10.7778,106.7030,17,40.2
-7,Chợ Bến Thành,TouristAttraction,10.7725,106.6980,16,38.7
-8,Dinh Độc Lập,TouristAttraction,10.7772,106.6958,16,22.4
-9,Nhà thờ Đức Bà,TouristAttraction,10.7797,106.6990,17,33.8
-10,Sân bay Tân Sơn Nhất,Airport,10.8188,106.6588,13,12.0
-11,Bến xe Miền Đông,BusStation,10.8015,106.6862,19,55.1
-12,Công viên Tao Đàn,Park,10.7684,106.6923,16,44.9
-13,UBND TP.HCM,Government,10.7765,106.7010,17,29.3
-14,Khách sạn Rex,Hotel,10.7743,106.7035,17,35.6
-15,Chợ Bình Tây,Market,10.7543,106.6658,5,60.2
->>>>>>> origin/feature/Traffic_CostModel
