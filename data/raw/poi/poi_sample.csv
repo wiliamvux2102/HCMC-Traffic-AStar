@@ -1,0 +1,11 @@
+poi_id,name,category,latitude,longitude,address
+POI001,Đại học Bách Khoa TP.HCM,university,10.772049,106.657734,"268 Lý Thường Kiệt, Quận 10, TP.HCM"
+POI002,Đại học Kinh tế TP.HCM,university,10.773822,106.689177,"59C Nguyễn Đình Chiểu, Quận 3, TP.HCM"
+POI003,Sân bay Tân Sơn Nhất,transport,10.818845,106.651856,"Trường Sơn, Tân Bình, TP.HCM"
+POI004,Bến Thành Market,shopping,10.772362,106.698032,"Lê Lợi, Quận 1, TP.HCM"
+POI005,Dinh Độc Lập,tourist_attraction,10.777031,106.695586,"135 Nam Kỳ Khởi Nghĩa, Quận 1, TP.HCM"
+POI006,Nhà thờ Đức Bà,tourist_attraction,10.779738,106.699053,"01 Công xã Paris, Quận 1, TP.HCM"
+POI007,Bệnh viện Chợ Rẫy,hospital,10.757784,106.660668,"201B Nguyễn Chí Thanh, Quận 5, TP.HCM"
+POI008,Thảo Cầm Viên Sài Gòn,park,10.787048,106.705982,"2 Nguyễn Bỉnh Khiêm, Quận 1, TP.HCM"
+POI009,Landmark 81,tourist_attraction,10.794963,106.721797,"720A Điện Biên Phủ, Bình Thạnh, TP.HCM"
+POI010,AEON Mall Tân Phú,shopping,10.801641,106.618896,"30 Bờ Bao Tân Thắng, Tân Phú, TP.HCM"
