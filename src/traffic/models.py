@@ -1,48 +1,84 @@
+# src/traffic/models.py
+
 from dataclasses import dataclass
 from typing import Dict, Tuple
 
 
-# Một road edge trong OSMnx MultiDiGraph
-# được định danh bởi (source, target, edge_key)
 EdgeKey = Tuple[int, int, int]
 
 
 @dataclass
 class TrafficSnapshot:
-    """
-    Trạng thái giao thông của toàn bộ road graph
-    tại một thời điểm cố định.
-    """
-
     timestamp: str
 
-    # (u, v, k) -> speed_kph
-    edge_speed: Dict[EdgeKey, float]
+    edge_speed: Dict[
+        EdgeKey,
+        float
+    ]
 
-    # (u, v, k) -> live / replay / fallback
-    provenance: Dict[EdgeKey, str]
+    provenance: Dict[
+        EdgeKey,
+        str
+    ]
 
-    def speed(self, u: int, v: int, k: int) -> float:
-        """
-        Lấy speed của một edge.
-        """
-        key = (u, v, k)
+    def speed(
+        self,
+        u: int,
+        v: int,
+        k: int
+    ) -> float:
+
+        key = (
+            int(u),
+            int(v),
+            int(k)
+        )
 
         if key not in self.edge_speed:
-            raise KeyError(f"Missing traffic speed for edge {key}")
+            raise KeyError(
+                f"No traffic speed for edge {key}"
+            )
 
         return self.edge_speed[key]
 
+
+    def source(
+        self,
+        u: int,
+        v: int,
+        k: int
+    ) -> str:
+
+        key = (
+            int(u),
+            int(v),
+            int(k)
+        )
+
+        if key not in self.provenance:
+            raise KeyError(
+                f"No provenance for edge {key}"
+            )
+
+        return self.provenance[key]
+
+
     @property
     def v_bound(self) -> float:
-        """
-        V_bound dùng trong heuristic A*.
-
-        Theo technical document hiện tại:
-            V_bound = max speed trong snapshot.
-        """
 
         if not self.edge_speed:
-            raise ValueError("TrafficSnapshot contains no edge speeds")
+            raise ValueError(
+                "TrafficSnapshot is empty"
+            )
 
-        return max(self.edge_speed.values())
+        return max(
+            self.edge_speed.values()
+        )
+
+
+    @property
+    def size(self) -> int:
+
+        return len(
+            self.edge_speed
+        )

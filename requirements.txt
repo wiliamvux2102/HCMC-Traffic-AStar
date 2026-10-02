@@ -6,3 +6,11 @@ flask>=3.0.0
 
 osmnx
 geopandas
+
+shapely
+requests
+python-dotenv
+
+geopandas 
+shapely 
+pyproj

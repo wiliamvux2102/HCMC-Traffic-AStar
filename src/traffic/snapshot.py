@@ -1,55 +1,107 @@
+# src/traffic/snapshot.py
+
 import pandas as pd
 
-from .models import TrafficSnapshot
+from src.traffic.models import (
+    EdgeKey,
+    TrafficSnapshot
+)
 
 
-def snapshot_from_dataframe(
+REQUIRED_COLUMNS = {
+    "source",
+    "target",
+    "edge_key",
+    "speed_kph",
+    "provenance",
+}
+
+
+def dataframe_to_snapshot(
     df: pd.DataFrame,
     timestamp: str
 ) -> TrafficSnapshot:
-    """
-        Create TrafficSnapshot from DataFrame
-    """
 
-    required = {
-        "source",
-        "target",
-        "edge_key",
-        "speed_kph",
-        "provenance",
-    }
-
-    missing = required - set(df.columns)
+    missing = (
+        REQUIRED_COLUMNS
+        - set(df.columns)
+    )
 
     if missing:
         raise ValueError(
-            f"Snapshot missing columns: {missing}"
+            f"Missing snapshot columns: {missing}"
         )
+
+
+    if df["speed_kph"].isna().any():
+        raise ValueError(
+            "Snapshot contains missing speed"
+        )
+
+
+    if (
+        df["speed_kph"] <= 0
+    ).any():
+        raise ValueError(
+            "Snapshot contains speed <= 0"
+        )
+
+
+    duplicated = df.duplicated(
+        subset=[
+            "source",
+            "target",
+            "edge_key"
+        ]
+    )
+
+    if duplicated.any():
+        raise ValueError(
+            "Snapshot contains duplicated OSM edges"
+        )
+
 
     edge_speed = {}
+
     provenance = {}
 
-    for row in df.itertuples(index=False):
 
-        key = (
+    for row in df.itertuples(
+        index=False
+    ):
+
+        key: EdgeKey = (
             int(row.source),
             int(row.target),
-            int(row.edge_key),
+            int(row.edge_key)
         )
 
-        speed = float(row.speed_kph)
+        edge_speed[key] = float(
+            row.speed_kph
+        )
 
-        if speed <= 0:
-            raise ValueError(
-                f"Invalid speed {speed} for {key}"
-            )
+        provenance[key] = str(
+            row.provenance
+        )
 
-        edge_speed[key] = speed
-
-        provenance[key] = row.provenance
 
     return TrafficSnapshot(
         timestamp=timestamp,
         edge_speed=edge_speed,
-        provenance=provenance,
+        provenance=provenance
+    )
+
+
+def load_snapshot_csv(
+    path: str,
+    timestamp: str
+) -> TrafficSnapshot:
+
+    df = pd.read_csv(
+        path
+    )
+
+    return dataframe_to_snapshot(
+        df,
+        timestamp
     )

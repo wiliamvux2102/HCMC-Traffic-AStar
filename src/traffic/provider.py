@@ -1,19 +1,23 @@
-from abc import ABC, abstractmethod
+# src/traffic/provider.py
 
-from .models import TrafficSnapshot
+from abc import (
+    ABC,
+    abstractmethod
+)
+
+from datetime import datetime
+
+from src.traffic.models import (
+    TrafficSnapshot
+)
 
 
 class TrafficProvider(ABC):
 
-    """
-        FallbackProvider
-        ReplayProvider
-        LiveProvider
-    """
-
     @abstractmethod
     def get_snapshot(
         self,
-        timestamp: str
+        timestamp: datetime
     ) -> TrafficSnapshot:
+
         pass
