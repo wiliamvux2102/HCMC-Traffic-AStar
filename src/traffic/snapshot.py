@@ -1,6 +1,15 @@
 import pandas as pd
+import math
+from decimal import Decimal
 
 from .models import TrafficSnapshot
+
+
+def edge_integer(value):
+    number = Decimal(str(value))
+    if not number.is_finite() or number != number.to_integral_value():
+        raise ValueError(f"Invalid integer edge ID: {value}")
+    return int(number)
 
 
 def snapshot_from_dataframe(
@@ -32,18 +41,20 @@ def snapshot_from_dataframe(
     for row in df.itertuples(index=False):
 
         key = (
-            int(row.source),
-            int(row.target),
-            int(row.edge_key),
+            edge_integer(row.source),
+            edge_integer(row.target),
+            edge_integer(row.edge_key),
         )
 
         speed = float(row.speed_kph)
 
-        if speed <= 0:
+        if not math.isfinite(speed) or speed <= 0:
             raise ValueError(
                 f"Invalid speed {speed} for {key}"
             )
 
+        if key in edge_speed:
+            raise ValueError(f"Duplicate edge in snapshot: {key}")
         edge_speed[key] = speed
 
         provenance[key] = row.provenance

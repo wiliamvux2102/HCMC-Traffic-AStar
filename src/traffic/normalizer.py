@@ -1,4 +1,5 @@
 import pandas as pd
+import math
 
 
 MIN_SPEED_KPH = 5.0
@@ -17,7 +18,7 @@ def normalize_speed(
     except (TypeError, ValueError):
         return None
 
-    if pd.isna(speed):
+    if not math.isfinite(speed):
         return None
 
     if speed <= 0:

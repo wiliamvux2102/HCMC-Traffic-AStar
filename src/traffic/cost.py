@@ -1,3 +1,6 @@
+import math
+
+
 def travel_time_seconds(
     distance_m: float,
     speed_kph: float
@@ -9,12 +12,12 @@ def travel_time_seconds(
         time = 3.6 * distance_m / speed_kph
     """
 
-    if distance_m < 0:
+    if not math.isfinite(distance_m) or distance_m < 0:
         raise ValueError(
             "distance_m cannot be negative"
         )
 
-    if speed_kph <= 0:
+    if not math.isfinite(speed_kph) or speed_kph <= 0:
         raise ValueError(
             "speed_kph must be > 0"
         )

@@ -2,6 +2,8 @@ import pandas as pd
 
 from .provider import TrafficProvider
 from .snapshot import snapshot_from_dataframe
+from .time_utils import normalize_timestamp
+from .normalizer import normalize_speed
 
 
 MIN_SPEED_KPH = 5.0
@@ -67,6 +69,7 @@ class FallbackTrafficProvider(
         timestamp: str
     ):
 
+        timestamp = normalize_timestamp(timestamp)
         ts = pd.Timestamp(timestamp)
 
         period = self._get_time_period(ts)
@@ -98,14 +101,11 @@ class FallbackTrafficProvider(
         )
 
         # tránh speed quá nhỏ hoặc bằng 0
-        df["speed_kph"] = (
-            df["speed_kph"]
-            .clip(lower=MIN_SPEED_KPH)
-        )
+        df["speed_kph"] = df["speed_kph"].map(normalize_speed)
+        if df["speed_kph"].isna().any():
+            raise ValueError("Fallback baseline contains invalid speeds")
 
         df["provenance"] = "fallback"
-
-        print(df.head())
 
         return snapshot_from_dataframe(
             df,
