@@ -89,3 +89,23 @@ print(
     "V_bound:",
     snapshot.v_bound
 )
+
+from src.traffic.speed_parser import parse_maxspeed
+
+
+test_values = [
+    "50",
+    "50 km/h",
+    "30 mph",
+    "['50', '60']",
+    "['80', '50', '60']",
+    None,
+    "signals",
+]
+
+for value in test_values:
+    print(
+        value,
+        "->",
+        parse_maxspeed(value)
+    )

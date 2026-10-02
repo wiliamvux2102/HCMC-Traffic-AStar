@@ -1,12 +1,20 @@
+# src/traffic/speed_parser.py
+
+import ast
 import math
 import re
-import ast
+from typing import Optional
 
 
 MPH_TO_KPH = 1.60934
 
 
 def _is_missing(value) -> bool:
+    """
+    Check whether a raw OSM maxspeed value is missing
+    or unusable.
+    """
+
     if value is None:
         return True
 
@@ -20,14 +28,14 @@ def _is_missing(value) -> bool:
         "nan",
         "none",
         "signals",
+        "variable",
         "walk",
-        "variable"
     }
 
 
-def _parse_single_speed(value) -> float | None:
+def _parse_single_speed(value) -> Optional[float]:
     """
-    Parse một giá trị speed đơn.
+    Parse one speed value into km/h.
 
     Examples:
         "50"       -> 50.0
@@ -40,7 +48,10 @@ def _parse_single_speed(value) -> float | None:
 
     text = str(value).strip().lower()
 
-    match = re.search(r"(\d+(?:\.\d+)?)", text)
+    match = re.search(
+        r"(\d+(?:\.\d+)?)",
+        text
+    )
 
     if not match:
         return None
@@ -53,42 +64,51 @@ def _parse_single_speed(value) -> float | None:
     return speed
 
 
-def parse_maxspeed(value) -> float | None:
+def parse_maxspeed(value) -> Optional[float]:
     """
-    Chuẩn hóa maxspeed_raw thành km/h.
+    Normalize OSM maxspeed_raw into km/h.
 
-    Nếu OSM chứa nhiều speed:
-        ['40', '50']
+    OSM may store multiple speed values:
+        "['50', '60']"
 
-    ta chọn max.
+    Project rule:
+        choose the maximum valid speed.
 
-    Đây là engineering choice của project.
+    Examples:
+        "50"               -> 50.0
+        "50 km/h"          -> 50.0
+        "30 mph"           -> 48.28
+        "['50', '60']"     -> 60.0
+        None               -> None
     """
 
     if _is_missing(value):
         return None
 
-    # Nếu pandas đọc list thành string:
-    # "['40', '50']"
+    # Handle string representation of a Python list
     if isinstance(value, str):
         stripped = value.strip()
 
-        if stripped.startswith("[") and stripped.endswith("]"):
+        if (
+            stripped.startswith("[")
+            and stripped.endswith("]")
+        ):
             try:
                 parsed = ast.literal_eval(stripped)
 
                 if isinstance(parsed, list):
-                    speeds = [
-                        _parse_single_speed(x)
-                        for x in parsed
-                    ]
+                    speeds = []
 
-                    speeds = [
-                        s for s in speeds
-                        if s is not None
-                    ]
+                    for item in parsed:
+                        speed = _parse_single_speed(item)
 
-                    return max(speeds) if speeds else None
+                        if speed is not None:
+                            speeds.append(speed)
+
+                    if speeds:
+                        return max(speeds)
+
+                    return None
 
             except (ValueError, SyntaxError):
                 pass
