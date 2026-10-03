@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>HCMC Traffic A* Visualization</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/visualization.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Header -->
+        <header class="app-header" role="banner">
+            <div class="header-content">
+                <h1 class="app-title">HCMC Traffic A* Visualization</h1>
+                <p class="app-subtitle">Interactive road network, POIs, and route finding</p>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="app-main" role="main">
+            <!-- Controls panel -->
+            <aside class="controls-panel" aria-label="Map controls">
+                <div class="control-group">
+                    <h2 class="control-title">Route Finder</h2>
+                    <div class="control-row">
+                        <label for="start-poi" class="control-label">From</label>
+                        <select id="start-poi" class="control-select" aria-label="Start POI">
+                            <option value="">Select start POI...</option>
+                        </select>
+                    </div>
+                    <div class="control-row">
+                        <label for="end-poi" class="control-label">To</label>
+                        <select id="end-poi" class="control-select" aria-label="End POI">
+                            <option value="">Select end POI...</option>
+                        </select>
+                    </div>
+                    <button id="find-route-btn" class="btn btn-primary" disabled>
+                        <span class="btn-text">Find Route</span>
+                        <span class="btn-loading" hidden>Finding...</span>
+                    </button>
+                    <button id="clear-route-btn" class="btn btn-secondary" hidden>Clear Route</button>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <h2 class="control-title">Map Layers</h2>
+                    <div class="layer-toggle">
+                        <input type="checkbox" id="layer-edges" checked>
+                        <label for="layer-edges">Road Network</label>
+                    </div>
+                    <div class="layer-toggle">
+                        <input type="checkbox" id="layer-nodes">
+                        <label for="layer-nodes">Road Nodes</label>
+                    </div>
+                    <div class="layer-toggle">
+                        <input type="checkbox" id="layer-pois" checked>
+                        <label for="layer-pois">POIs</label>
+                    </div>
+                    <div class="layer-toggle">
+                        <input type="checkbox" id="layer-route" checked>
+                        <label for="layer-route">Route</label>
+                    </div>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <h2 class="control-title">POI Filters</h2>
+                    <div class="control-row">
+                        <label for="poi-category" class="control-label">Category</label>
+                        <select id="poi-category" class="control-select" aria-label="POI category filter">
+                            <option value="">All Categories</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <h2 class="control-title">Route Info</h2>
+                    <div id="route-info" class="route-info" hidden>
+                        <div class="route-info-row">
+                            <span class="route-info-label">Distance</span>
+                            <span id="route-distance" class="route-info-value">—</span>
+                        </div>
+                        <div class="route-info-row">
+                            <span class="route-info-label">Nodes</span>
+                            <span id="route-nodes" class="route-info-value">—</span>
+                        </div>
+                        <div class="route-info-row">
+                            <span class="route-info-label">From</span>
+                            <span id="route-start" class="route-info-value">—</span>
+                        </div>
+                        <div class="route-info-row">
+                            <span class="route-info-label">To</span>
+                            <span id="route-end" class="route-info-value">—</span>
+                        </div>
+                    </div>
+                    <p id="route-placeholder" class="route-placeholder">Select two POIs to find a route</p>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <h2 class="control-title">Legend</h2>
+                    <div id="legend" class="legend"></div>
+                </div>
+            </aside>
+
+            <!-- Map container -->
+            <div class="map-container" role="application" aria-label="HCMC Traffic Map">
+                <div id="map" class="map"></div>
+                <div id="map-loading" class="map-loading" aria-live="polite">
+                    <div class="spinner"></div>
+                    <p>Loading map data...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer" role="contentinfo">
+            <p>HCMC Traffic A* — Data from OpenStreetMap</p>
+        </footer>
+    </div>
+
+    <!-- Data injection for initial load -->
+    <script id="initial-data" type="application/json">
+    {
+        "bounds": {{ bounds|tojson }},
+        "center": {{ center|tojson }},
+        "categories": {{ categories|tojson }},
+        "pois": {{ pois|tojson }}
+    }
+    </script>
+
+    <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
+</body>
+</html>

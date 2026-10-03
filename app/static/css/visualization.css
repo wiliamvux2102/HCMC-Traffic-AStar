@@ -1,0 +1,701 @@
+/* HCMC Traffic A* Visualization - CSS */
+/* Design system based on dataviz palette.md */
+
+/* ============================================================
+   CSS Custom Properties (Design Tokens)
+   ============================================================ */
+
+:root {
+    /* Light theme (default) */
+    --surface-1: #fcfcfb;       /* Chart/map surface */
+    --surface-2: #f9f9f7;       /* Page plane */
+    --surface-3: #ffffff;       /* Card surface */
+
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+
+    --border-color: rgba(11, 11, 11, 0.10);
+    --border-focus: #2a78d6;
+
+    /* Categorical colors (validated palette) */
+    --series-1: #2a78d6;   /* blue - university, bus_station */
+    --series-2: #eb6834;   /* orange - tourist_attraction */
+    --series-3: #1baf7a;   /* aqua - school */
+    --series-4: #eda100;   /* yellow - hotel */
+    --series-5: #e87ba4;   /* magenta - supermarket */
+    --series-6: #008300;   /* green - park */
+    --series-7: #4a3aa7;   /* violet - mall */
+    --series-8: #e34948;   /* red - hospital, museum */
+
+    /* Status colors */
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+
+    /* Route colors */
+    --route-color: #2a78d6;
+    --route-start-color: #0ca30c;
+    --route-end-color: #d03b3b;
+
+    /* Road colors */
+    --road-major: #e34948;
+    --road-secondary: #eb6834;
+    --road-minor: #898781;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.05);
+    --shadow-md: 0 4px 12px rgba(11, 11, 11, 0.08);
+    --shadow-lg: 0 8px 24px rgba(11, 11, 11, 0.10);
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+
+    /* Z-index */
+    --z-dropdown: 100;
+    --z-modal: 200;
+    --z-tooltip: 300;
+}
+
+/* Dark theme */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --surface-1: #1a1a19;
+        --surface-2: #0d0d0d;
+        --surface-3: #242423;
+
+        --text-primary: #ffffff;
+        --text-secondary: #c3c2b7;
+        --text-muted: #898781;
+
+        --border-color: rgba(255, 255, 255, 0.10);
+
+        /* Categorical colors - dark mode steps */
+        --series-1: #3987e5;
+        --series-2: #d95926;
+        --series-3: #199e70;
+        --series-4: #c98500;
+        --series-5: #d55181;
+        --series-6: #008300;
+        --series-7: #9085e9;
+        --series-8: #e66767;
+
+        /* Status colors - same in both modes */
+        --status-good: #0ca30c;
+        --status-warning: #fab219;
+        --status-serious: #ec835a;
+        --status-critical: #d03b3b;
+
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+}
+
+[data-theme="dark"] {
+    --surface-1: #1a1a19;
+    --surface-2: #0d0d0d;
+    --surface-3: #242423;
+
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+
+    --border-color: rgba(255, 255, 255, 0.10);
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ============================================================
+   Reset & Base
+   ============================================================ */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Inter", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    background-color: var(--surface-2);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 100vh;
+}
+
+.app-header {
+    padding: var(--space-4) var(--space-6);
+    background: var(--surface-3);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.app-title {
+    margin: 0 0 var(--space-1);
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    text-wrap: balance;
+}
+
+.app-subtitle {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+.app-main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.controls-panel {
+    width: 340px;
+    min-width: 300px;
+    max-width: 400px;
+    background: var(--surface-3);
+    border-right: 1px solid var(--border-color);
+    padding: var(--space-4);
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+.map-container {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    background: var(--surface-1);
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+    min-height: 500px;
+}
+
+.app-footer {
+    padding: var(--space-3) var(--space-6);
+    background: var(--surface-3);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.app-footer p {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* ============================================================
+   Controls Panel
+   ============================================================ */
+
+.control-group {
+    margin-bottom: var(--space-5);
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-title {
+    margin: 0 0 var(--space-3);
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.control-row {
+    margin-bottom: var(--space-3);
+}
+
+.control-row:last-child {
+    margin-bottom: 0;
+}
+
+.control-label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.control-select {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.control-select:hover {
+    border-color: var(--text-muted);
+}
+
+.control-select:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(42, 120, 214, 0.2);
+}
+
+.control-select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.control-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: var(--space-4) 0;
+}
+
+.layer-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.layer-toggle:last-child {
+    margin-bottom: 0;
+}
+
+.layer-toggle input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--series-1);
+    cursor: pointer;
+}
+
+.layer-toggle label {
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2) var(--space-4);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--series-1);
+    color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #1c5cab;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: var(--surface-1);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--surface-2);
+    border-color: var(--text-muted);
+}
+
+.btn-loading {
+    display: none;
+}
+
+/* Route Info */
+.route-info {
+    background: var(--surface-1);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+}
+
+.route-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-1) 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.route-info-row:last-child {
+    border-bottom: none;
+}
+
+.route-info-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.route-info-value {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.route-placeholder {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: var(--space-3);
+}
+
+/* Legend */
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.legend-swatch.route {
+    background: var(--route-color);
+    border-radius: 2px;
+}
+
+.legend-swatch.start {
+    background: var(--route-start-color);
+    border-radius: 50%;
+}
+
+.legend-swatch.end {
+    background: var(--route-end-color);
+    border-radius: 50%;
+}
+
+/* ============================================================
+   Map Loading
+   ============================================================ */
+
+.map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    z-index: 10;
+    gap: var(--space-3);
+    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+}
+
+.map-loading.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--series-1);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ============================================================
+   Leaflet Map Customization
+   ============================================================ */
+
+.leaflet-container {
+    font-family: inherit;
+    background: var(--surface-1);
+}
+
+.leaflet-popup-content-wrapper {
+    background: var(--surface-3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+
+.leaflet-popup-content {
+    margin: var(--space-2) var(--space-3);
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.leaflet-popup-tip {
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
+}
+
+.leaflet-control-zoom {
+    border: none !important;
+    box-shadow: var(--shadow-md) !important;
+}
+
+.leaflet-control-zoom a {
+    background: var(--surface-3) !important;
+    color: var(--text-primary) !important;
+    border: none !important;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    font-size: 18px;
+    transition: background var(--transition-fast);
+}
+
+.leaflet-control-zoom a:hover {
+    background: var(--surface-2) !important;
+}
+
+.leaflet-control-zoom a:first-child {
+    border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
+}
+
+.leaflet-control-zoom a:last-child {
+    border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
+}
+
+.leaflet-control-attribution {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(4px);
+    font-size: 11px !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .leaflet-control-attribution {
+        background: rgba(26, 26, 25, 0.9) !important;
+    }
+}
+
+[data-theme="dark"] .leaflet-control-attribution {
+    background: rgba(26, 26, 25, 0.9) !important;
+}
+
+/* Custom route line style */
+.leaflet-interactive.route-line {
+    stroke-width: 4px !important;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* POI markers */
+.poi-marker {
+    background: transparent;
+    border: none;
+}
+
+.poi-marker-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    transition: transform var(--transition-fast);
+}
+
+.poi-marker:hover .poi-marker-icon {
+    transform: scale(1.2);
+}
+
+/* Start/End markers */
+.route-marker {
+    background: transparent;
+    border: none;
+}
+
+.route-marker-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 3px solid var(--surface-3);
+    box-shadow: var(--shadow-md);
+}
+
+.route-marker-icon.start {
+    background: var(--route-start-color);
+}
+
+.route-marker-icon.end {
+    background: var(--route-end-color);
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 1024px) {
+    .controls-panel {
+        width: 280px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-main {
+        flex-direction: column;
+    }
+
+    .controls-panel {
+        width: 100%;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 50vh;
+    }
+
+    .map {
+        min-height: 50vh;
+    }
+
+    .app-header {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    .app-title {
+        font-size: 20px;
+    }
+}
+
+/* ============================================================
+   Accessibility
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+}
+
+/* Skip link */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    background: var(--series-1);
+    color: #fff;
+    text-decoration: none;
+    border-radius: var(--radius-sm);
+    z-index: 1000;
+    transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+    top: var(--space-4);
+}
