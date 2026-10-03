@@ -216,9 +216,9 @@
                     const props = feature.properties;
                     layer.bindPopup(createEdgePopup(props));
                 }
-            }).addTo(state.map);
+            });
 
-            updateLayerVisibility('edges', true);
+            updateLayerVisibility('edges', false);
         } catch (error) {
             console.error('Failed to load edges:', error);
         }
