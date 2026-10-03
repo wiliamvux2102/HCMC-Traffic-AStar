@@ -9,6 +9,7 @@ import pandas as pd
 # Data file paths
 NODES_FILE = "data/processed/nodes.csv"
 EDGES_FILE = "data/processed/edges.csv"
+EDGES_ENRICHED_FILE = "data/processed/edges_enriched.csv"
 POI_FILE = "data/processed/poi_final.csv"
 
 # HCMC center coordinates
@@ -25,10 +26,17 @@ def load_nodes():
 
 def load_edges():
     """Load road edges from CSV."""
-    if not os.path.exists(EDGES_FILE):
+    # Prefer enriched edges if available
+    edges_path = EDGES_ENRICHED_FILE if os.path.exists(EDGES_ENRICHED_FILE) else EDGES_FILE
+    if not os.path.exists(edges_path):
         return []
-    df = pd.read_csv(EDGES_FILE)
-    return df[["source", "target", "edge_key", "distance_m", "highway", "oneway", "geometry"]].to_dict("records")
+    df = pd.read_csv(edges_path)
+    # Ensure required columns exist
+    required_cols = ["source", "target", "edge_key", "distance_m"]
+    available_cols = [c for c in required_cols if c in df.columns]
+    optional_cols = ["highway", "oneway", "maxspeed_raw", "geometry"]
+    available_optional = [c for c in optional_cols if c in df.columns]
+    return df[available_cols + available_optional].to_dict("records")
 
 
 def load_pois():
@@ -219,6 +227,12 @@ def get_poi_by_id(poi_id):
         if poi["poi_id"] == poi_id:
             return poi
     return None
+
+
+def get_all_pois():
+    """Get all POIs for dropdown selection."""
+    pois = load_pois()
+    return [{"poi_id": p["poi_id"], "name": p["name"], "category": p["category"]} for p in pois]
 
 
 if __name__ == "__main__":

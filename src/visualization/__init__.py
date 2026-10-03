@@ -10,16 +10,16 @@ from src.visualization.map import (
     generate_geojson_pois,
     get_categories,
     get_poi_by_id,
+    get_all_pois,
 )
 
 from src.visualization.route_plot import (
     load_graph,
-    haversine_distance,
-    a_star,
+    load_traffic_snapshot,
+    create_fallback_snapshot,
     find_path_between_pois,
     generate_route_geojson,
     generate_route_geojson_with_start_end,
-    get_all_pois,
 )
 
 __all__ = [
@@ -32,11 +32,11 @@ __all__ = [
     "generate_geojson_pois",
     "get_categories",
     "get_poi_by_id",
+    "get_all_pois",
     "load_graph",
-    "haversine_distance",
-    "a_star",
+    "load_traffic_snapshot",
+    "create_fallback_snapshot",
     "find_path_between_pois",
     "generate_route_geojson",
     "generate_route_geojson_with_start_end",
-    "get_all_pois",
 ]

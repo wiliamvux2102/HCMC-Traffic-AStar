@@ -3,7 +3,7 @@
 Interactive web-based visualization for the HCMC Traffic A* project, featuring:
 - **Road Network**: 86,992 nodes and 200,540 edges from OpenStreetMap
 - **POIs**: 159 Points of Interest across 10 categories
-- **A* Route Finding**: Interactive shortest path computation between any two POIs
+- **A* Route Finding**: Uses the project's existing A* infrastructure with traffic-aware costs
 
 ## Quick Start
 
@@ -24,8 +24,8 @@ The app will start at `http://localhost:5000` (redirects to `/viz`).
 
 1. **Select Start POI** - Choose from 159 POIs in the dropdown
 2. **Select End POI** - Choose a different POI
-3. **Click "Find Route"** - Computes shortest path using A* algorithm
-4. **View Results** - Route displayed on map with distance and node count
+3. **Click "Find Route"** - Computes shortest path using the project's A* algorithm
+4. **View Results** - Route displayed on map with distance, time, and node count
 5. **Filter POIs** - Use category filter to show specific POI types
 6. **Toggle Layers** - Show/hide road network, nodes, POIs, and route
 
@@ -43,12 +43,30 @@ app/
     └── js/visualization.js    # Frontend logic (Leaflet)
 ```
 
-### Core Visualization Modules
+### Core Visualization Modules (using existing codebase)
 ```
 src/visualization/
 ├── __init__.py         # Package exports
-├── map.py              # Data loading & GeoJSON generation
-└── route_plot.py       # A* pathfinding & route GeoJSON
+├── map.py              # Data loading & GeoJSON generation (uses pandas directly)
+└── route_plot.py       # Route finding using existing Graph, AStar, TrafficSnapshot
+```
+
+### Existing Routing Infrastructure (reused)
+```
+src/
+├── graph/
+│   ├── loader.py       # load_graph() - loads nodes, edges, POIs from CSV
+│   └── graph.py        # Graph class with nodes, edges, edge_index, POIs
+├── routing/
+│   ├── astar.py        # AStar class with traffic-aware search
+│   ├── heuristic.py    # haversine_distance, travel_time_heuristic
+│   ├── cost.py         # edge_cost using traffic.cost.travel_time_seconds
+│   └── models.py       # RouteResult dataclass
+└── traffic/
+    ├── snapshot.py     # snapshot_from_dataframe()
+    ├── models.py       # TrafficSnapshot with v_bound
+    ├── cost.py         # travel_time_seconds(distance_m, speed_kph)
+    └── provider.py     # TrafficProvider ABC
 ```
 
 ### API Endpoints
@@ -86,11 +104,13 @@ src/visualization/
 | Museum | Red (#e34948) | 🏛️ |
 | Bus Station | Blue (#2a78d6) | 🚌 |
 
-### A* Pathfinding
-- Uses Haversine distance as heuristic
-- Respects one-way streets
-- Returns path as node sequence + GeoJSON for display
-- Typical performance: <500ms for cross-city routes
+### A* Pathfinding (uses existing implementation)
+- **Algorithm**: `src.routing.astar.AStar` class
+- **Heuristic**: `travel_time_heuristic` using `v_bound` (max speed in snapshot)
+- **Cost Function**: `edge_cost` → `travel_time_seconds` = 3.6 × distance_m / speed_kph
+- **Traffic Modes**: LIVE, REPLAY, FALLBACK (default uses maxspeed from edges or highway-type defaults)
+- **Performance**: ~170ms for cross-city routes, expands ~14K nodes
+- **Returns**: RouteResult with path_nodes, path_edges, total_time_s, total_distance_m, provenance_counts
 
 ## Design System
 
@@ -126,8 +146,8 @@ python test_visualization.py
 Tests cover:
 - Data loading (nodes, edges, POIs)
 - GeoJSON generation
-- Route finding (A*)
-- Module imports
+- Graph and TrafficSnapshot loading
+- Route finding (using existing A*)
 
 ### Test API Endpoints
 ```bash
@@ -140,12 +160,36 @@ with app.test_client() as client:
 "
 ```
 
+### Run Existing Routing Tests
+```bash
+python -m unittest tests.test_routing -v
+```
+
 ## Performance Notes
 
+- **Graph Caching**: Graph and TrafficSnapshot loaded once at startup
 - **Edge sampling**: `/api/map/edges?sample=5000` loads 5K edges (default) instead of 200K
 - **Node sampling**: `/api/map/nodes?sample=2000` loads 2K nodes
 - **Leaflet Canvas renderer**: Used for better performance with many features
 - **Lazy loading**: POIs filtered by category on demand
+
+## Traffic Data Integration
+
+The visualization automatically creates a **fallback traffic snapshot** using:
+1. `maxspeed_raw` from edges.csv if available
+2. Highway-type defaults (motorway=80, primary=60, tertiary=50, residential=40 km/h)
+
+To use real traffic data:
+1. Create `data/processed/traffic_snapshot.csv` with columns: `source, target, edge_key, speed_kph, provenance`
+2. The `snapshot_from_dataframe()` function will load it automatically
+
+### Traffic Snapshot Format
+```csv
+source,target,edge_key,speed_kph,provenance
+366224272,4883839119,0,60,replay
+366224272,7952136568,0,40,replay
+...
+```
 
 ## Customization
 
@@ -179,12 +223,14 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {...})
 | Route not found | POIs may not be connected in road graph |
 | Slow performance | Reduce `sample` parameter for edges/nodes |
 | Dark mode issues | Ensure CSS custom properties are properly defined |
+| "Incomplete snapshot" error | Ensure all edges have speeds (fallback handles this) |
 
 ## Data Sources
 
 - **Road Network**: OpenStreetMap via OSMnx (15km radius around HCMC center)
 - **POIs**: OpenStreetMap (amenity, tourism, shop, leisure tags)
 - **Processing**: KD-Tree nearest node mapping with Haversine validation (≤500m)
+- **Traffic**: Fallback speeds from edge maxspeed or highway-type defaults
 
 ## License
 

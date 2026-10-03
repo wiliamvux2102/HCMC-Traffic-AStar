@@ -18,6 +18,9 @@ from visualization import (
     get_all_pois,
     find_path_between_pois,
     generate_route_geojson_with_start_end,
+    load_graph,
+    load_traffic_snapshot,
+    create_fallback_snapshot,
 )
 
 def test_data_loading():
@@ -69,9 +72,29 @@ def test_geojson_generation():
     print("GeoJSON generation test PASSED")
 
 
+def test_graph_and_snapshot():
+    """Test loading graph and creating traffic snapshot."""
+    print("\nTesting graph and snapshot loading...")
+
+    graph = load_graph()
+    print(f"  Graph: {len(graph.nodes)} nodes, {len(graph.edge_index)} edges, {len(graph.pois)} POIs")
+
+    snapshot = load_traffic_snapshot(graph)
+    print(f"  Snapshot: {len(snapshot.edge_speed)} edges, mode={snapshot.mode}, v_bound={snapshot.v_bound:.1f} km/h")
+
+    # Test fallback snapshot creation
+    fallback = create_fallback_snapshot(graph)
+    print(f"  Fallback: {len(fallback.edge_speed)} edges, mode={fallback.mode}, v_bound={fallback.v_bound:.1f} km/h")
+
+    print("Graph and snapshot test PASSED")
+
+
 def test_route_finding():
-    """Test route finding between POIs."""
-    print("\nTesting route finding...")
+    """Test route finding between POIs using existing A*."""
+    print("\nTesting route finding (using existing A* infrastructure)...")
+
+    graph = load_graph()
+    snapshot = load_traffic_snapshot(graph)
 
     all_pois = get_all_pois()
     if len(all_pois) < 2:
@@ -83,7 +106,7 @@ def test_route_finding():
 
     print(f"  Finding route from {start_poi} to {end_poi}...")
 
-    result = find_path_between_pois(start_poi, end_poi)
+    result = find_path_between_pois(start_poi, end_poi, graph, snapshot)
 
     if 'error' in result:
         print(f"  Route finding failed: {result['error']}")
@@ -91,7 +114,13 @@ def test_route_finding():
     else:
         print(f"  Route found!")
         print(f"    Distance: {result['total_distance_km']} km")
+        print(f"    Time: {result['total_time_min']} min ({result['total_time_s']} s)")
         print(f"    Nodes in path: {len(result['path_nodes'])}")
+        print(f"    Edges in path: {len(result['path_edges'])}")
+        print(f"    Expanded nodes: {result['expanded_nodes']}")
+        print(f"    Runtime: {result['runtime_ms']} ms")
+        print(f"    Traffic mode: {result['traffic_mode']}")
+        print(f"    Provenance: {result['provenance_counts']}")
 
         # Test GeoJSON generation
         geojson = generate_route_geojson_with_start_end(result)
@@ -116,18 +145,18 @@ def test_visualization_imports():
         generate_geojson_pois as ggp,
         get_categories as gc,
         get_poi_by_id as gpi,
+        get_all_pois as gap,
     )
     print("  map module: OK")
 
     # Test route_plot module
     from visualization.route_plot import (
         load_graph as lg,
-        haversine_distance as hd,
-        a_star as astar,
+        load_traffic_snapshot as lts,
+        create_fallback_snapshot as cfs,
         find_path_between_pois as fpbp,
         generate_route_geojson as grg,
         generate_route_geojson_with_start_end as grgwse,
-        get_all_pois as gap,
     )
     print("  route_plot module: OK")
 
@@ -139,19 +168,20 @@ def test_visualization_imports():
 
 
 if __name__ == '__main__':
-    print("=" * 50)
+    print("=" * 60)
     print("HCMC Traffic A* Visualization - Component Tests")
-    print("=" * 50)
+    print("=" * 60)
 
     try:
         test_visualization_imports()
         test_data_loading()
         test_geojson_generation()
+        test_graph_and_snapshot()
         test_route_finding()
 
-        print("\n" + "=" * 50)
+        print("\n" + "=" * 60)
         print("ALL TESTS COMPLETED SUCCESSFULLY")
-        print("=" * 50)
+        print("=" * 60)
 
     except Exception as e:
         print(f"\nTEST FAILED: {e}")

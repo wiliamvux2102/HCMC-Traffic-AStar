@@ -1,163 +1,135 @@
-"""Route plotting utilities for HCMC Traffic A*."""
+"""Route plotting utilities for HCMC Traffic A* - using existing routing infrastructure."""
 
 import json
 import os
-import heapq
 from pathlib import Path
 import pandas as pd
-import math
+
+from src.graph.loader import load_graph
+from src.routing.astar import AStar
+from src.routing.models import RouteResult
+from src.traffic.snapshot import snapshot_from_dataframe
+from src.traffic.models import TrafficSnapshot
 
 
 # Data file paths
-NODES_FILE = "data/processed/nodes.csv"
-EDGES_FILE = "data/processed/edges.csv"
 POI_FILE = "data/processed/poi_final.csv"
+TRAFFIC_FILE = "data/processed/traffic_snapshot.csv"  # If available
 
 
-def load_graph():
+def create_fallback_snapshot(graph):
     """
-    Load the road network as an adjacency list for A* pathfinding.
-    Returns: (adjacency_list, node_coords)
+    Create a fallback traffic snapshot using maxspeed from edges or default speed.
+    This allows routing without real-time traffic data.
     """
-    nodes_df = pd.read_csv(NODES_FILE)
-    edges_df = pd.read_csv(EDGES_FILE)
+    edge_speed = {}
+    provenance = {}
 
-    # Build node coordinate lookup
-    node_coords = {}
-    for _, row in nodes_df.iterrows():
-        node_coords[row["node_id"]] = (row["latitude"], row["longitude"])
+    for key, edge in graph.edge_index.items():
+        # Use maxspeed from edge meta if available, otherwise default to 40 km/h
+        maxspeed = edge["meta"].get("maxspeed_raw")
+        if maxspeed:
+            try:
+                speed = float(maxspeed)
+            except (ValueError, TypeError):
+                speed = 40.0
+        else:
+            # Default speed based on highway type
+            highway = edge["meta"].get("highway", "residential")
+            if highway in ["motorway", "trunk"]:
+                speed = 80.0
+            elif highway in ["primary", "secondary"]:
+                speed = 60.0
+            elif highway in ["tertiary"]:
+                speed = 50.0
+            else:
+                speed = 40.0
 
-    # Build adjacency list
-    adj = {}
-    for _, edge in edges_df.iterrows():
-        source = edge["source"]
-        target = edge["target"]
-        distance = edge["distance_m"]
-        oneway = edge.get("oneway", False)
+        # Ensure reasonable bounds
+        speed = max(10.0, min(120.0, speed))
+        edge_speed[key] = speed
+        provenance[key] = "fallback"
 
-        if source not in adj:
-            adj[source] = []
-        adj[source].append((target, distance))
-
-        # If not oneway, add reverse edge
-        if not oneway:
-            if target not in adj:
-                adj[target] = []
-            adj[target].append((source, distance))
-
-    return adj, node_coords
-
-
-def haversine_distance(lat1, lon1, lat2, lon2):
-    """Calculate Haversine distance between two points in meters."""
-    R = 6371000  # Earth radius in meters
-
-    lat1 = math.radians(lat1)
-    lat2 = math.radians(lat2)
-    dlat = lat2 - lat1
-    dlon = math.radians(lon2 - lon1)
-
-    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
-    return 2 * R * math.asin(math.sqrt(a))
+    return TrafficSnapshot(
+        timestamp="2026-10-02T12:00:00+07:00",
+        edge_speed=edge_speed,
+        provenance=provenance,
+        mode="FALLBACK"
+    )
 
 
-def heuristic(node_id, goal_id, node_coords):
-    """Heuristic function for A* (straight-line distance)."""
-    if node_id in node_coords and goal_id in node_coords:
-        lat1, lon1 = node_coords[node_id]
-        lat2, lon2 = node_coords[goal_id]
-        return haversine_distance(lat1, lon1, lat2, lon2)
-    return 0
-
-
-def a_star(start_node, goal_node, adj, node_coords, max_iterations=100000):
+def load_traffic_snapshot(graph):
     """
-    A* pathfinding algorithm.
-    Returns: (path, total_distance) or (None, None) if no path found.
+    Try to load traffic snapshot from file, otherwise create fallback.
     """
-    if start_node not in adj or goal_node not in adj:
-        return None, None
+    if os.path.exists(TRAFFIC_FILE):
+        try:
+            df = pd.read_csv(TRAFFIC_FILE)
+            return snapshot_from_dataframe(df, "2026-10-02T12:00:00+07:00")
+        except Exception as e:
+            print(f"Warning: Could not load traffic snapshot: {e}")
 
-    # Priority queue: (f_score, g_score, node_id, path)
-    open_set = []
-    heapq.heappush(open_set, (0, 0, start_node, [start_node]))
-
-    g_scores = {start_node: 0}
-    iterations = 0
-
-    while open_set and iterations < max_iterations:
-        iterations += 1
-        f_score, g_score, current, path = heapq.heappop(open_set)
-
-        if current == goal_node:
-            return path, g_score
-
-        # Skip if we've found a better path to this node
-        if g_score > g_scores.get(current, float('inf')):
-            continue
-
-        for neighbor, distance in adj.get(current, []):
-            tentative_g = g_score + distance
-
-            if tentative_g < g_scores.get(neighbor, float('inf')):
-                g_scores[neighbor] = tentative_g
-                h = heuristic(neighbor, goal_node, node_coords)
-                f = tentative_g + h
-                heapq.heappush(open_set, (f, tentative_g, neighbor, path + [neighbor]))
-
-    return None, None
+    return create_fallback_snapshot(graph)
 
 
-def find_path_between_pois(start_poi_id, end_poi_id):
+def find_path_between_pois(start_poi_id, end_poi_id, graph=None, snapshot=None):
     """
-    Find the shortest path between two POIs.
+    Find the shortest path between two POIs using the existing A* implementation.
     Returns: dict with path info or None if failed.
     """
-    # Load POIs to get their nearest nodes
-    pois_df = pd.read_csv(POI_FILE)
+    # Load graph if not provided
+    if graph is None:
+        graph = load_graph()
 
-    start_poi = pois_df[pois_df["poi_id"] == start_poi_id]
-    end_poi = pois_df[pois_df["poi_id"] == end_poi_id]
+    # Load snapshot if not provided
+    if snapshot is None:
+        snapshot = load_traffic_snapshot(graph)
 
-    if start_poi.empty or end_poi.empty:
-        return {"error": "POI not found"}
+    # Get POI nearest nodes
+    if start_poi_id not in graph.poi_to_node:
+        return {"error": f"Start POI {start_poi_id} not found in graph"}
+    if end_poi_id not in graph.poi_to_node:
+        return {"error": f"End POI {end_poi_id} not found in graph"}
 
-    start_node = int(start_poi.iloc[0]["nearest_node"])
-    end_node = int(end_poi.iloc[0]["nearest_node"])
-
-    # Load graph
-    adj, node_coords = load_graph()
+    start_node = graph.poi_to_node[start_poi_id]
+    end_node = graph.poi_to_node[end_poi_id]
 
     # Run A*
-    path, distance = a_star(start_node, end_node, adj, node_coords)
+    astar = AStar(graph)
+    result = astar.search(start_node, end_node, snapshot)
 
-    if path is None:
+    if not result.found:
         return {"error": "No path found"}
 
     # Build detailed path info
     path_coords = []
-    for node_id in path:
-        if node_id in node_coords:
-            lat, lon = node_coords[node_id]
-            path_coords.append([lon, lat])  # GeoJSON is [lon, lat]
+    for node_id in result.path_nodes:
+        node = graph.nodes[node_id]
+        path_coords.append([node.lon, node.lat])  # GeoJSON is [lon, lat]
 
     # Get POI coordinates
-    start_lat = start_poi.iloc[0]["latitude"]
-    start_lon = start_poi.iloc[0]["longitude"]
-    end_lat = end_poi.iloc[0]["latitude"]
-    end_lon = end_poi.iloc[0]["longitude"]
+    start_poi = graph.pois[start_poi_id]
+    end_poi = graph.pois[end_poi_id]
 
     return {
         "start_poi": start_poi_id,
         "end_poi": end_poi_id,
         "start_node": start_node,
         "end_node": end_node,
-        "path_nodes": path,
+        "path_nodes": result.path_nodes,
+        "path_edges": result.path_edges,
         "path_coordinates": path_coords,
-        "total_distance_m": distance,
-        "total_distance_km": round(distance / 1000, 2),
-        "start_coords": [start_lon, start_lat],
-        "end_coords": [end_lon, end_lat]
+        "total_distance_m": result.total_distance_m,
+        "total_distance_km": round(result.total_distance_m / 1000, 2),
+        "total_time_s": round(result.total_time_s, 1),
+        "total_time_min": round(result.total_time_s / 60, 1),
+        "expanded_nodes": result.expanded_nodes,
+        "runtime_ms": round(result.runtime_ms, 1),
+        "start_coords": [start_poi["longitude"], start_poi["latitude"]],
+        "end_coords": [end_poi["longitude"], end_poi["latitude"]],
+        "traffic_mode": result.traffic_mode,
+        "snapshot_timestamp": result.snapshot_timestamp,
+        "provenance_counts": result.provenance_counts
     }
 
 
@@ -175,6 +147,8 @@ def generate_route_geojson(path_result):
             "end_poi": path_result.get("end_poi"),
             "distance_m": path_result.get("total_distance_m"),
             "distance_km": path_result.get("total_distance_km"),
+            "time_s": path_result.get("total_time_s"),
+            "time_min": path_result.get("total_time_min"),
             "color": "#2a78d6",
             "weight": 4
         },
@@ -201,6 +175,8 @@ def generate_route_geojson_with_start_end(path_result):
             "end_poi": path_result.get("end_poi"),
             "distance_m": path_result.get("total_distance_m"),
             "distance_km": path_result.get("total_distance_km"),
+            "time_s": path_result.get("total_time_s"),
+            "time_min": path_result.get("total_time_min"),
             "color": "#2a78d6",
             "weight": 4
         },
@@ -246,16 +222,19 @@ def generate_route_geojson_with_start_end(path_result):
 
 def get_all_pois():
     """Get all POIs for dropdown selection."""
-    pois_df = pd.read_csv(POI_FILE)
-    return pois_df[["poi_id", "name", "category"]].to_dict("records")
+    graph = load_graph()
+    return [
+        {"poi_id": poi_id, "name": poi["name"], "category": poi.get("category", "unknown")}
+        for poi_id, poi in graph.pois.items()
+    ]
 
 
 if __name__ == "__main__":
     # Test the functions
     print("Loading graph...")
-    adj, node_coords = load_graph()
-    print(f"Graph loaded: {len(adj)} nodes with edges")
-    print(f"Node coords: {len(node_coords)}")
+    graph = load_graph()
+    print(f"Graph loaded: {len(graph.nodes)} nodes, {len(graph.edge_index)} edges")
+    print(f"POIs: {len(graph.pois)}")
 
     # Test POI pathfinding
     pois = get_all_pois()
@@ -263,5 +242,5 @@ if __name__ == "__main__":
         start = pois[0]["poi_id"]
         end = pois[1]["poi_id"]
         print(f"\nFinding path from {start} to {end}...")
-        result = find_path_between_pois(start, end)
+        result = find_path_between_pois(start, end, graph)
         print(json.dumps(result, indent=2))

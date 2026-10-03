@@ -199,7 +199,7 @@
     // Layer Loading
     // ============================================================
 
-    async function loadEdgesLayer(sampleSize = 5000) {
+    async function loadEdgesLayer(sampleSize = null) {
         try {
             const response = await fetch(`/api/map/edges?sample=${sampleSize}`);
             const geojson = await response.json();
@@ -224,7 +224,7 @@
         }
     }
 
-    async function loadNodesLayer(sampleSize = 2000) {
+    async function loadNodesLayer(sampleSize = null) {
         try {
             const response = await fetch(`/api/map/nodes?sample=${sampleSize}`);
             const geojson = await response.json();

@@ -11,9 +11,32 @@ from src.visualization import (
     get_all_pois,
     find_path_between_pois,
     generate_route_geojson_with_start_end,
+    load_graph,
+    load_traffic_snapshot,
 )
 
 viz_bp = Blueprint("visualization", __name__)
+
+# Cache graph and snapshot for performance
+_cached_graph = None
+_cached_snapshot = None
+
+
+def get_cached_graph():
+    """Get or load graph (cached)."""
+    global _cached_graph
+    if _cached_graph is None:
+        _cached_graph = load_graph()
+    return _cached_graph
+
+
+def get_cached_snapshot():
+    """Get or load traffic snapshot (cached)."""
+    global _cached_snapshot
+    if _cached_snapshot is None:
+        graph = get_cached_graph()
+        _cached_snapshot = load_traffic_snapshot(graph)
+    return _cached_snapshot
 
 
 @viz_bp.route("/viz")
@@ -76,7 +99,7 @@ def api_pois():
 
 @viz_bp.route("/api/route", methods=["POST"])
 def api_route():
-    """Find route between two POIs."""
+    """Find route between two POIs using existing A* implementation."""
     data = request.get_json()
     start_poi = data.get("start_poi")
     end_poi = data.get("end_poi")
@@ -87,16 +110,21 @@ def api_route():
     if start_poi == end_poi:
         return jsonify({"error": "Start and end POI must be different"}), 400
 
-    result = find_path_between_pois(start_poi, end_poi)
+    try:
+        graph = get_cached_graph()
+        snapshot = get_cached_snapshot()
+        result = find_path_between_pois(start_poi, end_poi, graph, snapshot)
 
-    if "error" in result:
-        return jsonify(result), 404
+        if "error" in result:
+            return jsonify(result), 404
 
-    geojson = generate_route_geojson_with_start_end(result)
-    return jsonify({
-        "route_info": result,
-        "geojson": geojson
-    })
+        geojson = generate_route_geojson_with_start_end(result)
+        return jsonify({
+            "route_info": result,
+            "geojson": geojson
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @viz_bp.route("/api/categories")
