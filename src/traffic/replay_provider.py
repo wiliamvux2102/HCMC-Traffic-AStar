@@ -2,9 +2,11 @@
 
 from datetime import datetime
 from pathlib import Path
+import re
 
 from src.traffic.provider import TrafficProvider
 from src.traffic.snapshot import load_snapshot_csv
+from src.traffic.models import TrafficSnapshot
 
 
 class ReplayProvider(TrafficProvider):
@@ -40,6 +42,27 @@ class ReplayProvider(TrafficProvider):
                 p.stat().st_mtime
         )
 
+    def _parse_timestamp_from_filename(self, path: Path) -> str:
+        """
+        Extract timestamp from snapshot filename.
+        Expected format: YYYY-MM-DD/HH-MM-SS-complete.csv (or with backslashes on Windows)
+        Returns ISO format string with HCMC timezone.
+        """
+        # Try to parse from path: data/traffic/snapshots/YYYY-MM-DD/HH-MM-SS-complete.csv
+        # Handle both forward slashes and backslashes
+        path_str = str(path).replace('\\', '/')
+        match = re.search(r'(\d{4}-\d{2}-\d{2})/(\d{2}-\d{2}-\d{2})-complete\.csv', path_str)
+        if match:
+            date_str, time_str = match.groups()
+            # Convert HH-MM-SS to HH:MM:SS
+            time_str = time_str.replace('-', ':')
+            # Assume HCMC timezone (UTC+7)
+            return f"{date_str}T{time_str}+07:00"
+
+        # Fallback: use file modification time
+        mtime = datetime.fromtimestamp(path.stat().st_mtime)
+        return mtime.isoformat()
+
 
     def get_snapshot(
         self,
@@ -55,7 +78,20 @@ class ReplayProvider(TrafficProvider):
             path
         )
 
-        return load_snapshot_csv(
+        # Parse the actual capture timestamp from the filename
+        snapshot_timestamp = self._parse_timestamp_from_filename(path)
+
+        # Load snapshot with the actual capture timestamp (not current time)
+        snapshot = load_snapshot_csv(
             str(path),
-            timestamp.isoformat()
+            snapshot_timestamp
+        )
+
+        # Override mode to REPLAY since this is explicitly a replay provider
+        # Keep the original snapshot timestamp (when data was actually captured)
+        return TrafficSnapshot(
+            timestamp=snapshot.timestamp,
+            edge_speed=snapshot.edge_speed,
+            provenance=snapshot.provenance,
+            mode="REPLAY"
         )

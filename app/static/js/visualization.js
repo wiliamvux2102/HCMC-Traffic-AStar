@@ -626,7 +626,12 @@
             state.ui.routeNodes.textContent = `${info.path_nodes ? info.path_nodes.length : 0} nodes`;
         }
         if (state.ui.routeModeBadge) {
-            state.ui.routeModeBadge.textContent = `${info.traffic_mode || 'LIVE'} A*`;
+            let modeText = `${info.traffic_mode || 'LIVE'} A*`;
+            // For REPLAY mode, show the snapshot capture time
+            if (info.traffic_mode === 'REPLAY' && info.snapshot_timestamp) {
+                modeText += ` (data from ${formatTimestamp(info.snapshot_timestamp)})`;
+            }
+            state.ui.routeModeBadge.textContent = modeText;
         }
 
         // Step endpoints
@@ -698,10 +703,14 @@
     function formatTimestamp(isoString) {
         try {
             const date = new Date(isoString);
-            return date.toLocaleTimeString('en-US', {
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit'
+                second: '2-digit',
+                hour12: true
             });
         } catch {
             return isoString;

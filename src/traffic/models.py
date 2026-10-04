@@ -30,11 +30,19 @@ class TrafficSnapshot:
     def __post_init__(self):
         # Infer mode from provenance if not provided
         if not self.mode:
-            provenance_values = set(self.provenance.values())
-            if "live" in provenance_values:
-                object.__setattr__(self, "mode", "LIVE")
-            elif "replay" in provenance_values:
-                object.__setattr__(self, "mode", "REPLAY")
+            provenance_values = list(self.provenance.values())
+            if provenance_values:
+                # Count each provenance type
+                from collections import Counter
+                counts = Counter(provenance_values)
+                # Use majority provenance as mode
+                majority = counts.most_common(1)[0][0]
+                if majority == "live":
+                    object.__setattr__(self, "mode", "LIVE")
+                elif majority == "replay":
+                    object.__setattr__(self, "mode", "REPLAY")
+                else:
+                    object.__setattr__(self, "mode", "FALLBACK")
             else:
                 object.__setattr__(self, "mode", "FALLBACK")
         elif self.mode not in {"LIVE", "REPLAY", "FALLBACK"}:

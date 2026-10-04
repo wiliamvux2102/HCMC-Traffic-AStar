@@ -162,10 +162,16 @@ def api_traffic_status():
         for prov in snapshot.provenance.values():
             provenance_counts[prov] = provenance_counts.get(prov, 0) + 1
 
+        # Use snapshot's actual timestamp (preserved from original data capture)
+        # For REPLAY mode, this will be the snapshot capture time
+        # For LIVE mode, this will be current time
+        # For FALLBACK mode, this will be current time
+        snapshot_timestamp = snapshot.timestamp
+
         return jsonify({
             "status": "ok",
             "mode": snapshot.mode,
-            "timestamp": timestamp.isoformat(),
+            "timestamp": snapshot_timestamp,
             "edges_with_speed": len(snapshot.edge_speed),
             "v_bound_kmh": round(snapshot.v_bound, 1),
             "provenance_counts": provenance_counts,

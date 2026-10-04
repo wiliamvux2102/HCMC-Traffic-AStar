@@ -348,14 +348,20 @@ class LiveProvider(TrafficProvider):
         )
 
         # ---------------------------------------------
-        # 8. Convert to object
+        # 8. Convert to object with explicit mode
         # ---------------------------------------------
 
-        snapshot = (
-            dataframe_to_snapshot(
-                complete_df,
-                timestamp.isoformat()
-            )
+        snapshot = TrafficSnapshot(
+            timestamp=timestamp.isoformat(),
+            edge_speed=dict(zip(
+                zip(complete_df["source"], complete_df["target"], complete_df["edge_key"]),
+                complete_df["speed_kph"]
+            )),
+            provenance=dict(zip(
+                zip(complete_df["source"], complete_df["target"], complete_df["edge_key"]),
+                complete_df["provenance"]
+            )),
+            mode="LIVE"
         )
 
         # ---------------------------------------------
