@@ -1,145 +1,90 @@
-/* HCMC Traffic A* Visualization - CSS */
-/* Design system based on dataviz palette.md */
-
-/* ============================================================
-   CSS Custom Properties (Design Tokens)
-   ============================================================ */
+/* HCMC Traffic A* Visualization - Google Maps Theme */
 
 :root {
-    /* Layout */
-    --sidebar-width: 340px;
+    --sidebar-width: 380px;
 
-    /* Light theme (default) */
-    --surface-1: #fcfcfb;       /* Chart/map surface */
-    --surface-2: #f9f9f7;       /* Page plane */
-    --surface-3: #ffffff;       /* Card surface */
+    /* Google Maps Light Palette */
+    --surface-1: #e8eaed;       /* Map ground / canvas */
+    --surface-2: #f1f3f4;       /* Subtle input & chip fill */
+    --surface-3: #ffffff;       /* Card & sidebar surface */
+    --surface-hover: #e8f0fe;   /* Active tint */
 
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted: #898781;
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --text-muted: #80868b;
 
-    --border-color: rgba(11, 11, 11, 0.10);
-    --border-focus: #2a78d6;
+    --border-color: #dadce0;
+    --border-subtle: #e8eaed;
+    --border-focus: #1a73e8;
 
-    /* Categorical colors (validated palette) */
-    --series-1: #2a78d6;   /* blue - university, bus_station */
-    --series-2: #eb6834;   /* orange - tourist_attraction */
-    --series-3: #1baf7a;   /* aqua - school */
-    --series-4: #eda100;   /* yellow - hotel */
-    --series-5: #e87ba4;   /* magenta - supermarket */
-    --series-6: #008300;   /* green - park */
-    --series-7: #4a3aa7;   /* violet - mall */
-    --series-8: #e34948;   /* red - hospital, museum */
+    /* Google Brand & Traffic Status Colors */
+    --google-blue: #1a73e8;
+    --google-blue-hover: #1557b0;
+    --google-blue-light: #e8f0fe;
 
-    /* Status colors */
-    --status-good: #0ca30c;
-    --status-warning: #fab219;
-    --status-serious: #ec835a;
-    --status-critical: #d03b3b;
+    --google-green: #188038;
+    --google-green-light: #e6f4ea;
 
-    /* Route colors */
-    --route-color: #2a78d6;
-    --route-start-color: #0ca30c;
-    --route-end-color: #d03b3b;
+    --google-red: #d93025;
+    --google-red-light: #fce8e6;
 
-    /* Road colors */
-    --road-major: #e34948;
-    --road-secondary: #eb6834;
-    --road-minor: #898781;
+    --google-yellow: #f29900;
+    --google-yellow-light: #fef7e0;
 
-    /* Spacing */
-    --space-1: 4px;
-    --space-2: 8px;
-    --space-3: 12px;
-    --space-4: 16px;
-    --space-5: 24px;
-    --space-6: 32px;
-    --space-7: 48px;
+    /* Route styling */
+    --route-normal: #1a73e8;
+    --route-jammed: #d93025;
+    --route-casing: #ffffff;
 
-    /* Border radius */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Elevation Shadows (Material Design) */
+    --shadow-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    --shadow-2: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    --shadow-panel: 0 1px 4px rgba(0, 0, 0, 0.18);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.05);
-    --shadow-md: 0 4px 12px rgba(11, 11, 11, 0.08);
-    --shadow-lg: 0 8px 24px rgba(11, 11, 11, 0.10);
-
-    /* Transitions */
-    --transition-fast: 150ms ease;
-    --transition-normal: 250ms ease;
-
-    /* Z-index */
-    --z-dropdown: 100;
-    --z-modal: 200;
-    --z-tooltip: 300;
+    /* Animation timing */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-standard: 350ms;
 }
 
-/* Dark theme */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-        --surface-1: #1a1a19;
-        --surface-2: #0d0d0d;
-        --surface-3: #242423;
+        --surface-1: #17181a;
+        --surface-2: #242528;
+        --surface-3: #2c2d30;
+        --surface-hover: #353b48;
 
-        --text-primary: #ffffff;
-        --text-secondary: #c3c2b7;
-        --text-muted: #898781;
+        --text-primary: #e8eaed;
+        --text-secondary: #9aa0a6;
+        --text-muted: #80868b;
 
-        --border-color: rgba(255, 255, 255, 0.10);
+        --border-color: #3c4043;
+        --border-subtle: #303134;
+        --border-focus: #8ab4f8;
 
-        /* Categorical colors - dark mode steps */
-        --series-1: #3987e5;
-        --series-2: #d95926;
-        --series-3: #199e70;
-        --series-4: #c98500;
-        --series-5: #d55181;
-        --series-6: #008300;
-        --series-7: #9085e9;
-        --series-8: #e66767;
+        --google-blue: #8ab4f8;
+        --google-blue-hover: #aecbfa;
+        --google-blue-light: #283347;
 
-        /* Status colors - same in both modes */
-        --status-good: #0ca30c;
-        --status-warning: #fab219;
-        --status-serious: #ec835a;
-        --status-critical: #d03b3b;
+        --google-green: #81c995;
+        --google-green-light: #1e3a2b;
 
-        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-        --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+        --google-red: #f28b82;
+        --google-red-light: #3c2424;
+
+        --google-yellow: #fdd663;
+        --google-yellow-light: #3d351e;
+
+        --route-normal: #8ab4f8;
+        --route-jammed: #f28b82;
+        --route-casing: #202124;
+
+        --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
+        --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.55);
+        --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 }
 
-[data-theme="dark"] {
-    --surface-1: #1a1a19;
-    --surface-2: #0d0d0d;
-    --surface-3: #242423;
-
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-
-    --border-color: rgba(255, 255, 255, 0.10);
-
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
-
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
-}
-
-/* ============================================================
-   Reset & Base
-   ============================================================ */
-
+/* Base reset */
 *, *::before, *::after {
     box-sizing: border-box;
 }
@@ -151,80 +96,140 @@ html, body {
 }
 
 body {
-    font-family: system-ui, -apple-system, "Segoe UI", "Inter", sans-serif;
+    font-family: "Google Sans", Roboto, system-ui, -apple-system, sans-serif;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.4;
     color: var(--text-primary);
-    background-color: var(--surface-2);
+    background-color: var(--surface-1);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    overflow: hidden;
 }
 
-/* ============================================================
-   Layout
-   ============================================================ */
-
+/* App Shell */
 .app-shell {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    min-height: 100vh;
+    height: 100vh;
+    width: 100vw;
 }
 
+/* Header */
 .app-header {
-    padding: var(--space-4) var(--space-6);
+    height: 52px;
     background: var(--surface-3);
     border-bottom: 1px solid var(--border-color);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    z-index: 1060;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
 }
 
 .header-content {
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--google-red-light);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .app-title {
-    margin: 0 0 var(--space-1);
-    font-size: 24px;
+    margin: 0;
+    font-size: 16px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     color: var(--text-primary);
-    text-wrap: balance;
 }
 
 .app-subtitle {
     margin: 0;
-    font-size: 14px;
-    font-weight: 400;
+    font-size: 11px;
     color: var(--text-secondary);
 }
 
+.traffic-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.traffic-mode-badge.mode-live {
+    background: var(--google-green-light);
+    color: var(--google-green);
+    border-color: transparent;
+}
+.traffic-mode-badge.mode-live .badge-dot {
+    background: var(--google-green);
+    box-shadow: 0 0 0 2px rgba(24, 128, 56, 0.2);
+}
+
+.traffic-mode-badge.mode-replay {
+    background: var(--google-yellow-light);
+    color: var(--google-yellow);
+    border-color: transparent;
+}
+.traffic-mode-badge.mode-replay .badge-dot {
+    background: var(--google-yellow);
+}
+
+.traffic-mode-badge.mode-fallback {
+    background: var(--surface-2);
+    color: var(--text-secondary);
+}
+
+/* Main Layout */
 .app-main {
     display: flex;
     flex: 1;
-    overflow: hidden;
-    max-width: 1400px;
-    width: 100%;
-    margin: 0 auto;
     position: relative;
+    width: 100%;
+    height: calc(100vh - 52px);
+    overflow: hidden;
 }
 
-/* ============================================================
-   Sidebar Wrapper & Google Maps Style Tab Toggle
-   ============================================================ */
-
+/* Sidebar Wrapper (Google Maps Floating Panel Style) */
 .sidebar-wrapper {
     position: relative;
     width: var(--sidebar-width);
     flex-shrink: 0;
     height: 100%;
-    z-index: 1050; /* Higher than Leaflet map panes (400) and controls (1000) */
-    transition: margin-left 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1050;
+    transition: margin-left var(--duration-standard) var(--ease-standard);
     margin-left: 0;
     overflow: visible;
 }
 
-/* Collapsed sidebar slides smoothly off to the left */
 .sidebar-wrapper.hidden {
     margin-left: calc(-1 * var(--sidebar-width));
 }
@@ -234,21 +239,37 @@ body {
     height: 100%;
     background: var(--surface-3);
     border-right: 1px solid var(--border-color);
-    padding: var(--space-4);
+    padding: 16px;
     overflow-y: auto;
     overflow-x: hidden;
+    box-shadow: var(--shadow-panel);
 }
 
-/* Google Maps style collapse tab button - sticks to panel outer border */
+/* Panel Scrollbar styling */
+.controls-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.controls-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+.controls-panel::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+.controls-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Google Maps Sidebar Edge Tab Button */
 .panel-toggle {
     position: absolute;
     top: 50%;
-    left: 100%; /* Sits immediately on the outer right edge of the sidebar */
+    left: 100%;
     transform: translateY(-50%);
     width: 24px;
     height: 48px;
     border: 1px solid var(--border-color);
-    border-left: none; /* Seamlessly joins the sidebar border */
+    border-left: none;
     border-radius: 0 8px 8px 0;
     background: var(--surface-3);
     color: var(--text-secondary);
@@ -257,7 +278,7 @@ body {
     align-items: center;
     justify-content: center;
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.16);
-    transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
     z-index: 1051;
     padding: 0;
     user-select: none;
@@ -265,7 +286,7 @@ body {
 
 .panel-toggle:hover {
     background: var(--surface-2);
-    color: var(--text-primary);
+    color: var(--google-blue);
     box-shadow: 3px 0 8px rgba(0, 0, 0, 0.22);
 }
 
@@ -276,135 +297,157 @@ body {
 
 .panel-toggle-icon {
     display: block;
-    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-standard) var(--ease-standard);
 }
 
-/* When collapsed (hidden), chevron rotates 180deg to point right (expand) */
 .sidebar-wrapper.hidden .panel-toggle-icon {
     transform: rotate(180deg);
 }
 
-.map-container {
-    flex: 1;
-    position: relative;
-    min-width: 0;
-    background: var(--surface-1);
-}
-
-.map {
-    width: 100%;
-    height: 100%;
-    min-height: 500px;
-}
-
-.app-footer {
-    padding: var(--space-3) var(--space-6);
+/* Travel Mode Bar */
+.travel-mode-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin: -16px -16px 14px -16px;
+    padding: 0 8px;
     background: var(--surface-3);
-    border-top: 1px solid var(--border-color);
-    flex-shrink: 0;
-    text-align: center;
 }
 
-.app-footer p {
-    margin: 0;
-    font-size: 12px;
-    color: var(--text-muted);
-}
-
-/* ============================================================
-   Controls Panel
-   ============================================================ */
-
-.control-group {
-    margin-bottom: var(--space-5);
-}
-
-.control-group:last-child {
-    margin-bottom: 0;
-}
-
-.control-title {
-    margin: 0 0 var(--space-3);
-    font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-}
-
-.control-row {
-    margin-bottom: var(--space-3);
-}
-
-.control-row:last-child {
-    margin-bottom: 0;
-}
-
-.control-label {
-    display: block;
-    margin-bottom: var(--space-1);
+.mode-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: var(--text-secondary);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.mode-tab.active {
+    color: var(--google-blue);
+    border-bottom-color: var(--google-blue);
+}
+
+.mode-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Directions Card (Google Maps Style) */
+.directions-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.waypoints-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.waypoints-indicators {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 80px;
+    padding: 6px 0;
+}
+
+.waypoint-dot.start {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #188038;
+    background: #ffffff;
+}
+
+.waypoint-line {
+    width: 2px;
+    height: 38px;
+    background-image: linear-gradient(to bottom, #9aa0a6 33%, rgba(255,255,255,0) 0%);
+    background-position: left;
+    background-size: 2px 6px;
+    background-repeat: repeat-y;
+}
+
+.waypoint-pin.end {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.waypoints-inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-wrapper {
+    position: relative;
 }
 
 .control-select {
     width: 100%;
-    padding: var(--space-2) var(--space-3);
+    height: 38px;
+    padding: 0 12px;
     font-family: inherit;
     font-size: 13px;
     color: var(--text-primary);
-    background: var(--surface-1);
+    background: var(--surface-3);
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-sm);
+    border-radius: 8px;
     cursor: pointer;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-
-.control-select:hover {
-    border-color: var(--text-muted);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .control-select:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(42, 120, 214, 0.2);
+    box-shadow: 0 0 0 2px var(--google-blue-light);
 }
 
-.control-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.control-divider {
-    height: 1px;
-    background: var(--border-color);
-    margin: var(--space-4) 0;
-}
-
-.layer-toggle {
+.swap-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-3);
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-2);
-}
-
-.layer-toggle:last-child {
-    margin-bottom: 0;
-}
-
-.layer-toggle input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--series-1);
+    justify-content: center;
     cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
-.layer-toggle label {
-    font-size: 13px;
-    color: var(--text-primary);
-    cursor: pointer;
-    user-select: none;
+.swap-btn:hover {
+    background: var(--surface-2);
+    color: var(--google-blue);
+    transform: rotate(180deg);
+}
+
+.directions-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
 }
 
 /* Buttons */
@@ -412,193 +455,401 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-2);
-    width: 100%;
-    padding: var(--space-2) var(--space-4);
+    gap: 8px;
+    height: 38px;
+    padding: 0 18px;
     font-family: inherit;
     font-size: 13px;
     font-weight: 500;
-    border: none;
-    border-radius: var(--radius-sm);
+    border-radius: 20px;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.15s ease;
+    border: none;
 }
 
-.btn:disabled {
+.btn-primary.btn-directions {
+    flex: 1;
+    background: var(--google-blue);
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.4);
+}
+
+.btn-primary.btn-directions:hover:not(:disabled) {
+    background: var(--google-blue-hover);
+    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.5);
+}
+
+.btn-primary:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
-.btn-primary {
-    background: var(--series-1);
-    color: #ffffff;
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: #1c5cab;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-}
-
-.btn-primary:active:not(:disabled) {
-    transform: translateY(0);
-}
-
-.btn-secondary {
-    background: var(--surface-1);
-    color: var(--text-primary);
+.btn-secondary.btn-clear {
+    background: var(--surface-3);
+    color: var(--text-secondary);
     border: 1px solid var(--border-color);
+    padding: 0 14px;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.btn-secondary.btn-clear:hover {
     background: var(--surface-2);
-    border-color: var(--text-muted);
+    color: var(--google-red);
 }
 
-.btn-loading {
-    display: none;
+/* Card Sections */
+.card-section {
+    padding: 12px 0;
+    border-top: 1px solid var(--border-subtle);
 }
 
-/* Route Info */
-.route-info {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: var(--space-3);
-}
-
-/* Traffic Status */
-.traffic-status {
-    background: var(--surface-1);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    padding: var(--space-3);
-}
-
-.traffic-status-row {
+.section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-1) 0;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
 }
 
-.traffic-status-row:last-child {
-    border-bottom: none;
-}
-
-.traffic-status-label {
+.section-title {
+    margin: 0 0 10px 0;
     font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--text-secondary);
 }
 
-.traffic-status-value {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
+.section-header .section-title {
+    margin-bottom: 0;
 }
 
-.traffic-mode-live {
-    color: var(--status-good);
-}
-
-.traffic-mode-replay {
-    color: var(--status-warning);
-}
-
-.traffic-mode-fallback {
-    color: var(--text-muted);
-}
-
-.traffic-mode-error {
-    color: var(--status-critical);
-}
-
-.route-info-row {
+.btn-icon-subtle {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: var(--space-1) 0;
-    border-bottom: 1px solid var(--border-color);
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.2s ease;
 }
 
-.route-info-row:last-child {
-    border-bottom: none;
+.btn-icon-subtle:hover {
+    background: var(--surface-2);
+    color: var(--google-blue);
+    transform: rotate(45deg);
 }
 
-.route-info-label {
-    font-size: 12px;
+/* Route Summary Card (Google Maps Trip Card) */
+.route-summary-card {
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: var(--shadow-1);
+}
+
+.route-hero {
+    margin-bottom: 12px;
+}
+
+.route-hero-primary {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.route-duration {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--google-green);
+    line-height: 1;
+}
+
+.route-duration.jammed {
+    color: var(--google-red);
+}
+
+.route-status-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: var(--google-green-light);
+    color: var(--google-green);
+}
+
+.route-status-pill.jammed {
+    background: var(--google-red-light);
+    color: var(--google-red);
+}
+
+.route-hero-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
     color: var(--text-secondary);
 }
 
-.route-info-value {
-    font-size: 13px;
+.route-stat {
     font-weight: 500;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
 }
 
-.route-placeholder {
-    margin: 0;
-    font-size: 13px;
+.route-stat-dot {
     color: var(--text-muted);
-    text-align: center;
-    padding: var(--space-3);
 }
 
-/* Legend */
-.legend {
+/* Google Maps Traffic Distribution Bar */
+.traffic-progress-container {
+    margin: 12px 0;
+}
+
+.traffic-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--border-subtle);
+}
+
+.traffic-segment.normal {
+    background: var(--route-normal);
+}
+
+.traffic-segment.jammed {
+    background: var(--route-jammed);
+}
+
+.traffic-bar-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.legend-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hint-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+.hint-dot.normal { background: var(--route-normal); }
+.hint-dot.jammed { background: var(--route-jammed); }
+
+.route-steps-summary {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 10px;
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: 8px;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.step-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.step-bullet.origin { background: #188038; }
+.step-bullet.destination { background: #ea4335; }
+
+.step-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.step-label {
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+
+.step-name {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Empty State */
+.route-empty-state {
+    padding: 20px 10px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.empty-title {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.empty-desc {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Traffic Status Grid */
+.traffic-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.status-cell {
+    background: var(--surface-2);
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cell-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.cell-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cell-value.pill-mode {
+    color: var(--google-blue);
+    font-weight: 700;
+}
+
+/* Layer Filter Chips (Google Maps Filter Chips) */
+.layer-chips-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.layer-chip {
+    cursor: pointer;
+}
+
+.layer-chip input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.chip-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.layer-chip:hover .chip-content {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.layer-chip input:checked + .chip-content {
+    background: var(--google-blue-light);
+    color: var(--google-blue);
+    border-color: var(--google-blue);
+    font-weight: 700;
+}
+
+/* Legend Grid */
+.legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
 }
 
 .legend-item {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    font-size: 12px;
+    gap: 8px;
+    font-size: 11px;
     color: var(--text-secondary);
 }
 
 .legend-swatch {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
     flex-shrink: 0;
 }
 
-.legend-swatch.route {
-    background: var(--route-color);
+.legend-swatch.normal {
+    background: var(--route-normal);
     border-radius: 2px;
+    height: 4px;
+}
+
+.legend-swatch.jammed {
+    background: var(--route-jammed);
+    border-radius: 2px;
+    height: 4px;
 }
 
 .legend-swatch.start {
-    background: var(--route-start-color);
-    border-radius: 50%;
+    background: #188038;
 }
 
 .legend-swatch.end {
-    background: var(--route-end-color);
-    border-radius: 50%;
+    background: #ea4335;
 }
 
-/* Route segment traffic status legend */
-.legend-swatch.jammed {
-    background: var(--status-critical);
-    border-radius: 2px;
+/* Map Container */
+.map-container {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background: var(--surface-1);
 }
 
-.legend-swatch.normal {
-    background: var(--status-good);
-    border-radius: 2px;
+.map {
+    width: 100%;
+    height: 100%;
 }
 
-/* ============================================================
-   Map Loading
-   ============================================================ */
-
+/* Google Maps Spinner */
 .map-loading {
     position: absolute;
     inset: 0;
@@ -606,11 +857,12 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: var(--surface-1);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(2px);
     color: var(--text-secondary);
-    z-index: 10;
-    gap: var(--space-3);
-    transition: opacity var(--transition-normal), visibility var(--transition-normal);
+    z-index: 1000;
+    gap: 12px;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
 .map-loading.hidden {
@@ -619,148 +871,180 @@ body {
     pointer-events: none;
 }
 
-.spinner {
-    width: 32px;
-    height: 32px;
-    border: 3px solid var(--border-color);
-    border-top-color: var(--series-1);
+.google-spinner {
+    width: 40px;
+    height: 40px;
+}
+
+.spinner-circle {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--google-blue);
     border-radius: 50%;
-    animation: spin 1s linear infinite;
+    animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
+.loading-label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
 /* ============================================================
-   Leaflet Map Customization
+   Leaflet Customization for Google Maps Look
    ============================================================ */
 
 .leaflet-container {
     font-family: inherit;
-    background: var(--surface-1);
+    background: #e5e3df; /* Classic Google Maps neutral tile background */
 }
 
-.leaflet-popup-content-wrapper {
-    background: var(--surface-3);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-}
-
-.leaflet-popup-content {
-    margin: var(--space-2) var(--space-3);
-    color: var(--text-primary);
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.leaflet-popup-tip {
-    background: var(--surface-3);
-    border: 1px solid var(--border-color);
-}
-
+/* Google Maps Zoom Control in bottom right */
 .leaflet-control-zoom {
     border: none !important;
-    box-shadow: var(--shadow-md) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden;
+    margin-right: 14px !important;
+    margin-bottom: 24px !important;
 }
 
 .leaflet-control-zoom a {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    font-size: 20px !important;
+    color: #5f6368 !important;
     background: var(--surface-3) !important;
-    color: var(--text-primary) !important;
-    border: none !important;
-    width: 36px;
-    height: 36px;
-    line-height: 36px;
-    font-size: 18px;
-    transition: background var(--transition-fast);
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.leaflet-control-zoom a:last-child {
+    border-bottom: none !important;
 }
 
 .leaflet-control-zoom a:hover {
     background: var(--surface-2) !important;
+    color: var(--google-blue) !important;
 }
 
-.leaflet-control-zoom a:first-child {
-    border-radius: var(--radius-md) 0 0 var(--radius-md) !important;
-}
-
-.leaflet-control-zoom a:last-child {
-    border-radius: 0 var(--radius-md) var(--radius-md) 0 !important;
-}
-
-.leaflet-control-attribution {
-    background: rgba(255, 255, 255, 0.9) !important;
-    backdrop-filter: blur(4px);
-    font-size: 11px !important;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .leaflet-control-attribution {
-        background: rgba(26, 26, 25, 0.9) !important;
-    }
-}
-
-[data-theme="dark"] .leaflet-control-attribution {
-    background: rgba(26, 26, 25, 0.9) !important;
-}
-
-/* Custom route line style */
-.leaflet-interactive.route-line {
-    stroke-width: 4px !important;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* POI markers */
-.poi-marker {
-    background: transparent;
+/* Leaflet Popup (Google Maps Card Style) */
+.leaflet-popup-content-wrapper {
+    background: var(--surface-3);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     border: none;
+    padding: 0;
 }
 
-.poi-marker-icon {
-    width: 28px;
-    height: 28px;
+.leaflet-popup-content {
+    margin: 12px 16px;
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+    background: var(--surface-3);
+    box-shadow: none;
+}
+
+.popup-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.popup-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.popup-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.popup-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 400;
+    padding: 2px 8px 2px 0;
+}
+
+.popup-table td {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Google Maps Markers */
+.gm-pin-start {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #188038;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-    transition: transform var(--transition-fast);
 }
 
-.poi-marker:hover .poi-marker-icon {
-    transform: scale(1.2);
-}
-
-/* Start/End markers */
-.route-marker {
-    background: transparent;
-    border: none;
-}
-
-.route-marker-icon {
-    width: 24px;
-    height: 24px;
+.gm-pin-ring {
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
     border-radius: 50%;
-    border: 3px solid var(--surface-3);
-    box-shadow: var(--shadow-md);
 }
 
-.route-marker-icon.start {
-    background: var(--route-start-color);
+.gm-pin-destination {
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
+    transition: transform 0.15s ease;
 }
 
-.route-marker-icon.end {
-    background: var(--route-end-color);
+.gm-pin-destination:hover {
+    transform: scale(1.15) translateY(-2px);
 }
 
-/* ============================================================
-   Responsive
-   ============================================================ */
+/* POI Circular Badge Markers */
+.gm-poi-pin {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--pin-color, #1a73e8);
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
 
+.poi-marker:hover .gm-poi-pin {
+    transform: scale(1.25);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
     :root {
-        --sidebar-width: 280px;
+        --sidebar-width: 320px;
     }
 }
 
@@ -772,7 +1056,7 @@ body {
     .sidebar-wrapper {
         width: 100%;
         max-height: 50vh;
-        transition: margin-top 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: margin-top var(--duration-standard) var(--ease-standard);
         margin-left: 0 !important;
     }
 
@@ -808,53 +1092,4 @@ body {
     .sidebar-wrapper.hidden .panel-toggle-icon {
         transform: rotate(270deg);
     }
-
-    .map {
-        min-height: 50vh;
-    }
-
-    .app-header {
-        padding: var(--space-3) var(--space-4);
-    }
-
-    .app-title {
-        font-size: 20px;
-    }
-}
-
-/* ============================================================
-   Accessibility
-   ============================================================ */
-
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-:focus-visible {
-    outline: 2px solid var(--border-focus);
-    outline-offset: 2px;
-}
-
-/* Skip link */
-.skip-link {
-    position: absolute;
-    top: -100%;
-    left: var(--space-4);
-    padding: var(--space-2) var(--space-3);
-    background: var(--series-1);
-    color: #fff;
-    text-decoration: none;
-    border-radius: var(--radius-sm);
-    z-index: 1000;
-    transition: top var(--transition-fast);
-}
-
-.skip-link:focus {
-    top: var(--space-4);
 }

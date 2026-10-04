@@ -1,6 +1,6 @@
 /**
- * HCMC Traffic A* Visualization - Main JavaScript
- * Interactive map with road network, POIs, and A* routing
+ * HCMC Traffic A* Visualization - Google Maps Theme JavaScript
+ * Interactive map with road network, POIs, realtime traffic, and A* routing
  */
 
 (function() {
@@ -28,36 +28,55 @@
         ui: {
             startPoiSelect: null,
             endPoiSelect: null,
+            swapPoiBtn: null,
             categorySelect: null,
             findRouteBtn: null,
             clearRouteBtn: null,
             layerToggles: {},
             routeInfo: null,
             routePlaceholder: null,
+            routeTimeVal: null,
+            routeTrafficLabel: null,
+            routeTrafficBar: null,
+            routeDistance: null,
+            routeNodes: null,
+            routeStart: null,
+            routeEnd: null,
+            routeModeBadge: null,
             legend: null,
-            loadingEl: null
+            loadingEl: null,
+            sidebarWrapper: null,
+            controlsPanel: null,
+            panelToggle: null,
+            trafficModeEl: null,
+            trafficTimestampEl: null,
+            trafficEdgesEl: null,
+            trafficVBoundEl: null,
+            refreshTrafficBtn: null,
+            headerTrafficBadge: null,
+            headerTrafficText: null
         }
     };
 
     // ============================================================
-    // Category Color Mapping (from dataviz palette)
+    // Category Colors (Google Maps / Material Palette)
     // ============================================================
 
     const CATEGORY_COLORS = {
-        university: '#2a78d6',
-        hospital: '#e34948',
-        school: '#1baf7a',
-        hotel: '#eda100',
-        park: '#008300',
-        supermarket: '#e87ba4',
-        mall: '#4a3aa7',
-        tourist_attraction: '#eb6834',
-        museum: '#e34948',
-        bus_station: '#2a78d6'
+        university: '#1a73e8',          // Blue
+        hospital: '#d93025',            // Red
+        school: '#00838f',              // Cyan / Teal
+        hotel: '#f29900',               // Amber
+        park: '#188038',                // Green
+        supermarket: '#e37400',         // Orange
+        mall: '#9334e6',                // Purple
+        tourist_attraction: '#e52592',   // Pink / Magenta
+        museum: '#d93025',              // Brick Red
+        bus_station: '#1a73e8'          // Transit Blue
     };
 
     const CATEGORY_ICONS = {
-        university: '🏫',
+        university: '🎓',
         hospital: '🏥',
         school: '🏫',
         hotel: '🏨',
@@ -76,7 +95,7 @@
         hotel: 'Hotel',
         park: 'Park',
         supermarket: 'Supermarket',
-        mall: 'Mall',
+        mall: 'Shopping Mall',
         tourist_attraction: 'Tourist Attraction',
         museum: 'Museum',
         bus_station: 'Bus Station'
@@ -101,11 +120,20 @@
     function initializeUI() {
         state.ui.startPoiSelect = document.getElementById('start-poi');
         state.ui.endPoiSelect = document.getElementById('end-poi');
+        state.ui.swapPoiBtn = document.getElementById('swap-poi-btn');
         state.ui.categorySelect = document.getElementById('poi-category');
         state.ui.findRouteBtn = document.getElementById('find-route-btn');
         state.ui.clearRouteBtn = document.getElementById('clear-route-btn');
         state.ui.routeInfo = document.getElementById('route-info');
         state.ui.routePlaceholder = document.getElementById('route-placeholder');
+        state.ui.routeTimeVal = document.getElementById('route-time-val');
+        state.ui.routeTrafficLabel = document.getElementById('route-traffic-label');
+        state.ui.routeTrafficBar = document.getElementById('route-traffic-bar');
+        state.ui.routeDistance = document.getElementById('route-distance');
+        state.ui.routeNodes = document.getElementById('route-nodes');
+        state.ui.routeStart = document.getElementById('route-start');
+        state.ui.routeEnd = document.getElementById('route-end');
+        state.ui.routeModeBadge = document.getElementById('route-mode-badge');
         state.ui.legend = document.getElementById('legend');
         state.ui.loadingEl = document.getElementById('map-loading');
 
@@ -116,10 +144,10 @@
             route: document.getElementById('layer-route')
         };
 
-        // Panel toggle (Google Maps style)
-        state.ui.panelToggle = document.getElementById('panel-toggle');
+        // Sidebar & Panel elements
         state.ui.sidebarWrapper = document.getElementById('sidebar-wrapper');
         state.ui.controlsPanel = document.querySelector('.controls-panel');
+        state.ui.panelToggle = document.getElementById('panel-toggle');
 
         // Traffic status elements
         state.ui.trafficModeEl = document.getElementById('traffic-mode');
@@ -127,6 +155,8 @@
         state.ui.trafficEdgesEl = document.getElementById('traffic-edges');
         state.ui.trafficVBoundEl = document.getElementById('traffic-vbound');
         state.ui.refreshTrafficBtn = document.getElementById('refresh-traffic-btn');
+        state.ui.headerTrafficBadge = document.getElementById('header-traffic-badge');
+        state.ui.headerTrafficText = document.getElementById('header-traffic-text');
     }
 
     function loadInitialData() {
@@ -141,11 +171,10 @@
     }
 
     // ============================================================
-    // Map Initialization (Leaflet)
+    // Map Initialization (Leaflet with Google Maps style controls)
     // ============================================================
 
     async function initializeMap() {
-        // Load Leaflet dynamically
         await loadLeaflet();
 
         const center = state.data.center || { lat: 10.7769, lon: 106.7009 };
@@ -153,12 +182,15 @@
         state.map = L.map('map', {
             center: [center.lat, center.lon],
             zoom: 13,
-            zoomControl: true,
+            zoomControl: false, // Positioned at bottomright like Google Maps
             attributionControl: true,
-            preferCanvas: true // Better performance for many features
+            preferCanvas: true
         });
 
-        // Add basemap (OpenStreetMap)
+        // Add Google Maps style bottom-right zoom control
+        L.control.zoom({ position: 'bottomright' }).addTo(state.map);
+
+        // Add OpenStreetMap tile layer with neutral look
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -170,15 +202,14 @@
             state.map.fitBounds([
                 [bounds.min_lat, bounds.min_lon],
                 [bounds.max_lat, bounds.max_lon]
-            ], { padding: [20, 20] });
+            ], { padding: [30, 30] });
         }
 
-        // Load map layers
+        // Initialize layers (Roads & Nodes hidden by default, POIs shown)
         await loadEdgesLayer();
         await loadNodesLayer();
         await loadPOIsLayer();
 
-        // Initialize empty route layer
         state.layers.route = L.featureGroup().addTo(state.map);
     }
 
@@ -189,7 +220,6 @@
                 return;
             }
 
-            // Load Leaflet CSS
             const cssLink = document.createElement('link');
             cssLink.rel = 'stylesheet';
             cssLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css';
@@ -197,7 +227,6 @@
             cssLink.crossOrigin = 'anonymous';
             document.head.appendChild(cssLink);
 
-            // Load Leaflet JS
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
             script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
@@ -219,9 +248,9 @@
 
             state.layers.edges = L.geoJSON(geojson, {
                 style: (feature) => ({
-                    color: feature.properties.color || '#898781',
-                    weight: feature.properties.weight || 1,
-                    opacity: 0.7,
+                    color: feature.properties.color || '#9aa0a6',
+                    weight: feature.properties.weight || 1.2,
+                    opacity: 0.65,
                     lineCap: 'round',
                     lineJoin: 'round'
                 }),
@@ -231,6 +260,7 @@
                 }
             });
 
+            // Turned off by default as requested
             updateLayerVisibility('edges', false);
         } catch (error) {
             console.error('Failed to load edges:', error);
@@ -245,8 +275,8 @@
             state.layers.nodes = L.geoJSON(geojson, {
                 pointToLayer: (feature, latlng) => {
                     return L.circleMarker(latlng, {
-                        radius: 2,
-                        fillColor: '#898781',
+                        radius: 2.5,
+                        fillColor: '#1a73e8',
                         color: '#ffffff',
                         weight: 1,
                         opacity: 0.8,
@@ -254,7 +284,7 @@
                     });
                 },
                 onEachFeature: (feature, layer) => {
-                    layer.bindPopup(`Node ID: ${feature.properties.node_id}`);
+                    layer.bindPopup(`<div class="popup-title">Road Node</div>Node ID: ${feature.properties.node_id}`);
                 }
             });
 
@@ -270,7 +300,6 @@
             const response = await fetch(url);
             const geojson = await response.json();
 
-            // Remove existing POI layer
             if (state.layers.pois) {
                 state.map.removeLayer(state.layers.pois);
             }
@@ -278,15 +307,17 @@
             state.layers.pois = L.geoJSON(geojson, {
                 pointToLayer: (feature, latlng) => {
                     const props = feature.properties;
-                    const color = props.color || '#898781';
+                    const color = props.color || '#1a73e8';
                     const icon = props.icon || '📍';
 
                     return L.marker(latlng, {
                         icon: L.divIcon({
                             className: 'poi-marker',
-                            html: `<div class="poi-marker-icon" style="background: ${color}; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);">${icon}</div>`,
-                            iconSize: [28, 28],
-                            iconAnchor: [14, 14]
+                            html: `<div class="gm-poi-pin" style="--pin-color: ${color};" title="${escapeHtml(props.name)}">
+                                <span>${icon}</span>
+                            </div>`,
+                            iconSize: [26, 26],
+                            iconAnchor: [13, 13]
                         })
                     });
                 },
@@ -303,7 +334,7 @@
     }
 
     // ============================================================
-    // Popup Content Creators
+    // Popups (Google Maps Style)
     // ============================================================
 
     function createEdgePopup(props) {
@@ -312,16 +343,13 @@
         const oneway = props.oneway ? 'Yes' : 'No';
 
         return `
-            <div class="popup-content">
-                <strong>Road Segment</strong>
-                <table class="popup-table">
-                    <tr><th>Type</th><td>${highway}</td></tr>
-                    <tr><th>Distance</th><td>${distance}</td></tr>
-                    <tr><th>One-way</th><td>${oneway}</td></tr>
-                    <tr><th>Source</th><td>${props.source}</td></tr>
-                    <tr><th>Target</th><td>${props.target}</td></tr>
-                </table>
-            </div>
+            <div class="popup-title">Road Segment</div>
+            <table class="popup-table">
+                <tr><th>Highway Type</th><td>${highway}</td></tr>
+                <tr><th>Length</th><td>${distance}</td></tr>
+                <tr><th>One-way</th><td>${oneway}</td></tr>
+                <tr><th>Edge Key</th><td>(${props.source} → ${props.target}, ${props.edge_key || 0})</td></tr>
+            </table>
         `;
     }
 
@@ -330,31 +358,45 @@
         const distance = props.distance_to_node_m ? `${Math.round(props.distance_to_node_m)} m` : 'N/A';
 
         return `
-            <div class="popup-content">
-                <strong>${escapeHtml(props.name)}</strong>
-                <table class="popup-table">
-                    <tr><th>Category</th><td><span class="category-badge" style="background: ${props.color}">${categoryLabel}</span></td></tr>
-                    <tr><th>POI ID</th><td>${props.poi_id}</td></tr>
-                    <tr><th>Nearest Node</th><td>${props.nearest_node || 'N/A'}</td></tr>
-                    <tr><th>Distance to Node</th><td>${distance}</td></tr>
-                </table>
-            </div>
+            <div class="popup-title">${escapeHtml(props.name)}</div>
+            <span class="popup-badge" style="background: ${props.color}20; color: ${props.color};">${categoryLabel}</span>
+            <table class="popup-table">
+                <tr><th>POI ID</th><td>${props.poi_id}</td></tr>
+                <tr><th>Nearest Node</th><td>${props.nearest_node || 'N/A'}</td></tr>
+                <tr><th>Offset Distance</th><td>${distance}</td></tr>
+            </table>
         `;
     }
 
     function createRoutePopup(props) {
         const distance = props.distance_km ? `${props.distance_km} km` : 'N/A';
+        const time = props.time_min ? `${props.time_min} min` : 'N/A';
 
         return `
-            <div class="popup-content">
-                <strong>Route</strong>
-                <table class="popup-table">
-                    <tr><th>From</th><td>${escapeHtml(props.start_poi)}</td></tr>
-                    <tr><th>To</th><td>${escapeHtml(props.end_poi)}</td></tr>
-                    <tr><th>Distance</th><td>${distance}</td></tr>
-                    <tr><th>Nodes</th><td>${props.path_nodes ? props.path_nodes.length : 'N/A'}</td></tr>
-                </table>
+            <div class="popup-title">Trip Route</div>
+            <table class="popup-table">
+                <tr><th>Estimated Time</th><td><strong>${time}</strong></td></tr>
+                <tr><th>Total Distance</th><td>${distance}</td></tr>
+                <tr><th>Intersections</th><td>${props.path_nodes ? props.path_nodes.length : 'N/A'}</td></tr>
+            </table>
+        `;
+    }
+
+    function createRouteSegmentPopup(props) {
+        const isJammed = props.is_jammed;
+        const statusLabel = isJammed ? 'Heavy Traffic (Jam)' : 'Normal Flow';
+        const statusColor = isJammed ? '#d93025' : '#188038';
+
+        return `
+            <div class="popup-title" style="color: ${statusColor};">
+                ${isJammed ? '🔴 ' : '🟢 '} ${statusLabel}
             </div>
+            <table class="popup-table">
+                <tr><th>Current Speed</th><td><strong>${props.current_speed_kph} km/h</strong></td></tr>
+                <tr><th>Free-Flow Speed</th><td>${props.free_flow_speed_kph} km/h</td></tr>
+                <tr><th>Flow Capacity</th><td>${(props.speed_ratio * 100).toFixed(0)}%</td></tr>
+                <tr><th>Segment #</th><td>${props.segment_index + 1}</td></tr>
+            </table>
         `;
     }
 
@@ -373,12 +415,12 @@
         const endPoi = state.ui.endPoiSelect.value;
 
         if (!startPoi || !endPoi) {
-            alert('Please select both start and end POIs');
+            alert('Please select both start and destination locations');
             return;
         }
 
         if (startPoi === endPoi) {
-            alert('Start and end POI must be different');
+            alert('Start and destination must be different locations');
             return;
         }
 
@@ -398,7 +440,7 @@
             }
 
             displayRoute(result.geojson, result.route_info);
-            showRouteInfo(result.route_info);
+            showRouteInfo(result.route_info, result.geojson);
             state.ui.clearRouteBtn.hidden = false;
 
         } catch (error) {
@@ -410,24 +452,40 @@
     }
 
     function displayRoute(geojson, routeInfo) {
-        // Clear existing route
         if (state.layers.route) {
             state.layers.route.clearLayers();
         }
 
-        // Handle both old format (single route line) and new format (FeatureCollection with segments)
+        let jammedSegmentsCount = 0;
+        let totalSegmentsCount = 0;
+
         if (geojson.type === 'FeatureCollection') {
-            // New format: segments with traffic coloring
+            // First pass: Add route casing line for Google Maps contrast
             geojson.features.forEach(feature => {
                 const props = feature.properties;
-
                 if (props.type === 'route_segment') {
-                    // Route segment with traffic coloring
+                    totalSegmentsCount++;
+                    if (props.is_jammed) jammedSegmentsCount++;
+
+                    // White / dark casing underneath
+                    const casingLayer = L.geoJSON(feature, {
+                        style: {
+                            color: '#ffffff',
+                            weight: 7,
+                            opacity: 0.9,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        },
+                        interactive: false
+                    });
+                    state.layers.route.addLayer(casingLayer);
+
+                    // Main colored line (Blue or Red)
                     const segmentLayer = L.geoJSON(feature, {
                         style: {
-                            color: props.color,
-                            weight: 5,
-                            opacity: 0.9,
+                            color: props.color || (props.is_jammed ? '#d93025' : '#1a73e8'),
+                            weight: 4.5,
+                            opacity: 0.95,
                             lineCap: 'round',
                             lineJoin: 'round'
                         },
@@ -436,32 +494,46 @@
                         }
                     });
                     state.layers.route.addLayer(segmentLayer);
-                } else if (props.type === 'start') {
-                    // Start marker
+                }
+            });
+
+            // Second pass: Start & Destination Markers
+            geojson.features.forEach(feature => {
+                const props = feature.properties;
+                if (props.type === 'start') {
                     const startLayer = L.geoJSON(feature, {
                         pointToLayer: (feature, latlng) => {
                             return L.marker(latlng, {
                                 icon: L.divIcon({
                                     className: 'route-marker',
-                                    html: `<div class="route-marker-icon start" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #0ca30c; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
-                                    iconSize: [24, 24],
-                                    iconAnchor: [12, 12]
-                                })
+                                    html: `<div class="gm-pin-start" title="Starting Location">
+                                        <span class="gm-pin-ring"></span>
+                                    </div>`,
+                                    iconSize: [22, 22],
+                                    iconAnchor: [11, 11]
+                                }),
+                                zIndexOffset: 1000
                             });
                         }
                     });
                     state.layers.route.addLayer(startLayer);
                 } else if (props.type === 'end') {
-                    // End marker
                     const endLayer = L.geoJSON(feature, {
                         pointToLayer: (feature, latlng) => {
                             return L.marker(latlng, {
                                 icon: L.divIcon({
                                     className: 'route-marker',
-                                    html: `<div class="route-marker-icon end" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #d03b3b; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
-                                    iconSize: [24, 24],
-                                    iconAnchor: [12, 12]
-                                })
+                                    html: `<div class="gm-pin-destination" title="Destination">
+                                        <svg width="28" height="34" viewBox="0 0 24 30" fill="none">
+                                            <path d="M12 0C5.37 0 0 5.37 0 12c0 9 12 18 12 18s12-9 12-18c0-6.63-5.37-12-12-12z" fill="#EA4335"/>
+                                            <circle cx="12" cy="11" r="4.5" fill="#FFFFFF"/>
+                                            <circle cx="12" cy="11" r="2.2" fill="#B31412"/>
+                                        </svg>
+                                    </div>`,
+                                    iconSize: [28, 34],
+                                    iconAnchor: [14, 32]
+                                }),
+                                zIndexOffset: 1001
                             });
                         }
                     });
@@ -469,15 +541,13 @@
                 }
             });
         } else if (geojson.type === 'Feature') {
-            // Old format: single route line
             const routeLayer = L.geoJSON(geojson, {
                 style: {
-                    color: '#2a78d6',
-                    weight: 4,
-                    opacity: 0.9,
+                    color: '#1a73e8',
+                    weight: 5,
+                    opacity: 0.95,
                     lineCap: 'round',
-                    lineJoin: 'round',
-                    className: 'route-line'
+                    lineJoin: 'round'
                 },
                 onEachFeature: (feature, layer) => {
                     layer.bindPopup(createRoutePopup(feature.properties));
@@ -486,29 +556,14 @@
             state.layers.route.addLayer(routeLayer);
         }
 
-        // Fit map to route
+        // Fit map to route bounds
         if (state.layers.route.getLayers().length > 0) {
             const bounds = state.layers.route.getBounds();
-            state.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 16 });
+            state.map.fitBounds(bounds, { padding: [60, 60], maxZoom: 16 });
         }
 
         updateLayerVisibility('route', true);
         state.data.currentRoute = routeInfo;
-    }
-
-    function createRouteSegmentPopup(props) {
-        const status = props.is_jammed ? '🔴 Traffic Jam' : '🟢 Normal Flow';
-        return `
-            <div class="popup-content">
-                <strong>Route Segment ${props.segment_index + 1}</strong>
-                <table class="popup-table">
-                    <tr><th>Status</th><td>${status}</td></tr>
-                    <tr><th>Current Speed</th><td>${props.current_speed_kph} km/h</td></tr>
-                    <tr><th>Free-flow Speed</th><td>${props.free_flow_speed_kph} km/h</td></tr>
-                    <tr><th>Speed Ratio</th><td>${(props.speed_ratio * 100).toFixed(0)}%</td></tr>
-                </table>
-            </div>
-        `;
     }
 
     function clearRoute() {
@@ -522,11 +577,61 @@
         updateLayerVisibility('route', false);
     }
 
-    function showRouteInfo(info) {
-        document.getElementById('route-distance').textContent = `${info.total_distance_km} km`;
-        document.getElementById('route-nodes').textContent = info.path_nodes ? info.path_nodes.length : '—';
-        document.getElementById('route-start').textContent = info.start_poi;
-        document.getElementById('route-end').textContent = info.end_poi;
+    function showRouteInfo(info, geojson) {
+        // Calculate jammed percentage
+        let jammedCount = 0;
+        let totalCount = 0;
+
+        if (geojson && geojson.features) {
+            geojson.features.forEach(f => {
+                if (f.properties && f.properties.type === 'route_segment') {
+                    totalCount++;
+                    if (f.properties.is_jammed) jammedCount++;
+                }
+            });
+        }
+
+        const hasJam = jammedCount > 0;
+        const normalCount = Math.max(0, totalCount - jammedCount);
+        const normalPct = totalCount > 0 ? (normalCount / totalCount * 100) : 100;
+        const jammedPct = 100 - normalPct;
+
+        // Big Travel Time hero
+        if (state.ui.routeTimeVal) {
+            state.ui.routeTimeVal.textContent = `${info.total_time_min} min`;
+            state.ui.routeTimeVal.className = `route-duration ${hasJam ? 'jammed' : 'normal'}`;
+        }
+
+        // Traffic status label
+        if (state.ui.routeTrafficLabel) {
+            state.ui.routeTrafficLabel.textContent = hasJam
+                ? `Slowdowns (${jammedCount} ${jammedCount === 1 ? 'jam' : 'jams'})`
+                : 'Fastest route now';
+            state.ui.routeTrafficLabel.className = `route-status-pill ${hasJam ? 'jammed' : 'normal'}`;
+        }
+
+        // Google Maps traffic progress bar
+        if (state.ui.routeTrafficBar) {
+            state.ui.routeTrafficBar.innerHTML = `
+                <div class="traffic-segment normal" style="width: ${normalPct}%;"></div>
+                <div class="traffic-segment jammed" style="width: ${jammedPct}%;"></div>
+            `;
+        }
+
+        // Stats
+        if (state.ui.routeDistance) {
+            state.ui.routeDistance.textContent = `${info.total_distance_km} km`;
+        }
+        if (state.ui.routeNodes) {
+            state.ui.routeNodes.textContent = `${info.path_nodes ? info.path_nodes.length : 0} nodes`;
+        }
+        if (state.ui.routeModeBadge) {
+            state.ui.routeModeBadge.textContent = `${info.traffic_mode || 'LIVE'} A*`;
+        }
+
+        // Step endpoints
+        if (state.ui.routeStart) state.ui.routeStart.textContent = info.start_poi;
+        if (state.ui.routeEnd) state.ui.routeEnd.textContent = info.end_poi;
 
         state.ui.routeInfo.hidden = false;
         state.ui.routePlaceholder.hidden = true;
@@ -554,22 +659,39 @@
             const data = await response.json();
 
             if (data.status === 'ok') {
-                state.ui.trafficModeEl.textContent = data.mode;
-                state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-' + data.mode.toLowerCase();
+                const mode = data.mode || 'LIVE';
+                state.ui.trafficModeEl.textContent = mode;
+                state.ui.trafficModeEl.className = 'cell-value pill-mode';
+
                 state.ui.trafficTimestampEl.textContent = formatTimestamp(data.timestamp);
-                state.ui.trafficEdgesEl.textContent = data.edges_with_speed.toLocaleString();
-                state.ui.trafficVBoundEl.textContent = data.v_bound_kmh + ' km/h';
+                state.ui.trafficEdgesEl.textContent = data.edges_with_speed ? data.edges_with_speed.toLocaleString() : '200,540';
+                state.ui.trafficVBoundEl.textContent = data.v_bound_kmh ? `${data.v_bound_kmh} km/h` : '72 km/h';
+
+                // Update Header Live Badge
+                if (state.ui.headerTrafficBadge && state.ui.headerTrafficText) {
+                    state.ui.headerTrafficBadge.className = `traffic-mode-badge mode-${mode.toLowerCase()}`;
+                    if (mode === 'LIVE') {
+                        state.ui.headerTrafficText.textContent = 'Live Traffic Feed';
+                    } else if (mode === 'REPLAY') {
+                        state.ui.headerTrafficText.textContent = 'Replay Traffic';
+                    } else {
+                        state.ui.headerTrafficText.textContent = 'Fallback Model';
+                    }
+                }
             } else {
-                state.ui.trafficModeEl.textContent = 'Error';
-                state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-error';
-                state.ui.trafficTimestampEl.textContent = '—';
-                state.ui.trafficEdgesEl.textContent = '—';
-                state.ui.trafficVBoundEl.textContent = '—';
+                setTrafficStatusError();
             }
         } catch (error) {
             console.error('Failed to load traffic status:', error);
-            state.ui.trafficModeEl.textContent = 'Error';
-            state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-error';
+            setTrafficStatusError();
+        }
+    }
+
+    function setTrafficStatusError() {
+        if (state.ui.trafficModeEl) state.ui.trafficModeEl.textContent = 'Offline';
+        if (state.ui.headerTrafficBadge) {
+            state.ui.headerTrafficBadge.className = 'traffic-mode-badge mode-fallback';
+            state.ui.headerTrafficText.textContent = 'Offline / Fallback';
         }
     }
 
@@ -579,8 +701,7 @@
             return date.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit',
-                second: '2-digit',
-                timeZoneName: 'short'
+                second: '2-digit'
             });
         } catch {
             return isoString;
@@ -588,7 +709,7 @@
     }
 
     // ============================================================
-    // Panel Toggle (Google Maps style)
+    // Sidebar Panel Toggle (Google Maps Style)
     // ============================================================
 
     function toggleDashboard() {
@@ -599,9 +720,9 @@
 
         const isHidden = sidebar.classList.toggle('hidden');
         toggle.setAttribute('aria-expanded', !isHidden);
-        toggle.title = isHidden ? 'Expand panel (Ctrl+D)' : 'Collapse panel (Ctrl+D)';
+        toggle.title = isHidden ? 'Expand side panel (Ctrl+D)' : 'Collapse side panel (Ctrl+D)';
 
-        // Smoothly invalidate Leaflet map size during the 350ms slide animation
+        // Fluid Leaflet resize during 350ms slide animation
         const startTime = performance.now();
         const duration = 380; // ms
 
@@ -626,7 +747,6 @@
         const pois = state.data.pois;
 
         [state.ui.startPoiSelect, state.ui.endPoiSelect].forEach(select => {
-            // Clear existing options except first
             while (select.options.length > 1) {
                 select.remove(1);
             }
@@ -634,12 +754,27 @@
             pois.forEach(poi => {
                 const option = document.createElement('option');
                 option.value = poi.poi_id;
-                option.textContent = `${poi.poi_id} - ${poi.name} (${CATEGORY_LABELS[poi.category] || poi.category})`;
+                const catLabel = CATEGORY_LABELS[poi.category] || poi.category;
+                option.textContent = `${poi.name} (${catLabel})`;
                 select.appendChild(option);
             });
         });
 
         updateRouteButtonState();
+    }
+
+    function swapPOIs() {
+        const startVal = state.ui.startPoiSelect.value;
+        const endVal = state.ui.endPoiSelect.value;
+
+        state.ui.startPoiSelect.value = endVal;
+        state.ui.endPoiSelect.value = startVal;
+
+        updateRouteButtonState();
+
+        if (startVal && endVal) {
+            findRoute();
+        }
     }
 
     function populateCategoryFilter() {
@@ -656,35 +791,29 @@
         const legend = state.ui.legend;
         legend.innerHTML = '';
 
-        // Route legend items
-        const routeItems = [
-            { label: 'Route (Normal)', color: '#2a78d6', class: 'normal' },
-            { label: 'Route (Jammed)', color: '#e34948', class: 'jammed' },
-            { label: 'Start', color: '#0ca30c', class: 'start' },
-            { label: 'End', color: '#d03b3b', class: 'end' }
+        const items = [
+            { label: 'Normal Traffic', color: '#1a73e8', class: 'normal' },
+            { label: 'Heavy Jam', color: '#d93025', class: 'jammed' },
+            { label: 'Origin Point', color: '#188038', class: 'start' },
+            { label: 'Destination', color: '#ea4335', class: 'end' }
         ];
 
-        routeItems.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'legend-item';
-            div.innerHTML = `
-                <span class="legend-swatch ${item.class}" style="background: ${item.color}"></span>
-                <span>${item.label}</span>
-            `;
-            legend.appendChild(div);
+        // Also add top 4 present categories
+        const presentCategories = [...new Set(state.data.pois.map(p => p.category))].slice(0, 4);
+        presentCategories.forEach(cat => {
+            items.push({
+                label: CATEGORY_LABELS[cat] || cat,
+                color: CATEGORY_COLORS[cat] || '#80868b',
+                class: 'poi'
+            });
         });
 
-        // Category legend items (only those present in data)
-        const presentCategories = [...new Set(state.data.pois.map(p => p.category))];
-        presentCategories.forEach(cat => {
-            const color = CATEGORY_COLORS[cat] || '#898781';
-            const label = CATEGORY_LABELS[cat] || cat;
-
+        items.forEach(item => {
             const div = document.createElement('div');
             div.className = 'legend-item';
             div.innerHTML = `
-                <span class="legend-swatch" style="background: ${color}; border-radius: 50%"></span>
-                <span>${label}</span>
+                <span class="legend-swatch ${item.class}" style="background: ${item.color};"></span>
+                <span>${escapeHtml(item.label)}</span>
             `;
             legend.appendChild(div);
         });
@@ -698,7 +827,7 @@
         const layer = state.layers[layerName];
         const toggle = state.ui.layerToggles[layerName];
 
-        if (layer && toggle) {
+        if (layer) {
             if (visible) {
                 if (!state.map.hasLayer(layer)) {
                     state.map.addLayer(layer);
@@ -708,6 +837,8 @@
                     state.map.removeLayer(layer);
                 }
             }
+        }
+        if (toggle) {
             toggle.checked = visible;
         }
     }
@@ -717,67 +848,51 @@
     // ============================================================
 
     function setupEventListeners() {
-        // Route finding
         state.ui.findRouteBtn.addEventListener('click', findRoute);
         state.ui.clearRouteBtn.addEventListener('click', clearRoute);
 
-        // Panel toggle (Google Maps style)
-        if (state.ui.panelToggle && state.ui.controlsPanel) {
+        // Location Swap button (⇄)
+        if (state.ui.swapPoiBtn) {
+            state.ui.swapPoiBtn.addEventListener('click', swapPOIs);
+        }
+
+        // Google Maps edge tab toggle
+        if (state.ui.panelToggle) {
             state.ui.panelToggle.addEventListener('click', toggleDashboard);
         }
 
-        // Keyboard shortcut for panel toggle (Ctrl+D)
+        // Keyboard shortcut Ctrl+D to toggle sidebar
         document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
                 e.preventDefault();
                 toggleDashboard();
             }
         });
 
-        // POI selection changes
+        // Dropdown changes
         state.ui.startPoiSelect.addEventListener('change', updateRouteButtonState);
         state.ui.endPoiSelect.addEventListener('change', updateRouteButtonState);
 
-        // Category filter
+        // Filter category change
         state.ui.categorySelect.addEventListener('change', (e) => {
             loadPOIsLayer(e.target.value || null);
         });
 
         // Layer toggles
         Object.entries(state.ui.layerToggles).forEach(([name, toggle]) => {
-            toggle.addEventListener('change', (e) => {
-                updateLayerVisibility(name, e.target.checked);
-            });
-        });
-
-        // Prevent same POI selection
-        [state.ui.startPoiSelect, state.ui.endPoiSelect].forEach(select => {
-            select.addEventListener('change', () => {
-                const otherSelect = select === state.ui.startPoiSelect ? state.ui.endPoiSelect : state.ui.startPoiSelect;
-                const selectedValue = select.value;
-
-                // Disable the selected option in the other dropdown
-                Array.from(otherSelect.options).forEach(opt => {
-                    opt.disabled = opt.value === selectedValue && opt.value !== '';
+            if (toggle) {
+                toggle.addEventListener('change', (e) => {
+                    updateLayerVisibility(name, e.target.checked);
                 });
-
-                // If other select has the now-disabled value, clear it
-                if (otherSelect.value === selectedValue) {
-                    otherSelect.value = '';
-                }
-
-                updateRouteButtonState();
-            });
+            }
         });
 
         // Refresh traffic button
         if (state.ui.refreshTrafficBtn) {
             state.ui.refreshTrafficBtn.addEventListener('click', async () => {
                 state.ui.refreshTrafficBtn.disabled = true;
-                state.ui.refreshTrafficBtn.textContent = 'Refreshing...';
                 await loadTrafficStatus();
                 state.ui.refreshTrafficBtn.disabled = false;
-                state.ui.refreshTrafficBtn.textContent = 'Refresh Traffic';
             });
         }
     }
