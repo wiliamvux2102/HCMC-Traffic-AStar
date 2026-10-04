@@ -21,10 +21,11 @@
 
         <!-- Main content -->
         <main class="app-main" role="main">
-            <!-- Controls panel -->
-            <aside class="controls-panel" aria-label="Map controls">
-                <div class="control-group">
-                    <h2 class="control-title">Route Finder</h2>
+            <!-- Sidebar with Google Maps style collapse tab -->
+            <div class="sidebar-wrapper" id="sidebar-wrapper">
+                <aside class="controls-panel" aria-label="Map controls">
+                    <div class="control-group">
+                        <h2 class="control-title">Route Finder</h2>
                     <div class="control-row">
                         <label for="start-poi" class="control-label">From</label>
                         <select id="start-poi" class="control-select" aria-label="Start POI">
@@ -42,6 +43,31 @@
                         <span class="btn-loading" hidden>Finding...</span>
                     </button>
                     <button id="clear-route-btn" class="btn btn-secondary" hidden>Clear Route</button>
+                </div>
+
+                <div class="control-divider"></div>
+
+                <div class="control-group">
+                    <h2 class="control-title">Traffic Status</h2>
+                    <div id="traffic-status" class="traffic-status">
+                        <div class="traffic-status-row">
+                            <span class="traffic-status-label">Mode</span>
+                            <span id="traffic-mode" class="traffic-status-value">Loading...</span>
+                        </div>
+                        <div class="traffic-status-row">
+                            <span class="traffic-status-label">Updated</span>
+                            <span id="traffic-timestamp" class="traffic-status-value">—</span>
+                        </div>
+                        <div class="traffic-status-row">
+                            <span class="traffic-status-label">Edges</span>
+                            <span id="traffic-edges" class="traffic-status-value">—</span>
+                        </div>
+                        <div class="traffic-status-row">
+                            <span class="traffic-status-label">Max Speed</span>
+                            <span id="traffic-vbound" class="traffic-status-value">—</span>
+                        </div>
+                    </div>
+                    <button id="refresh-traffic-btn" class="btn btn-secondary" style="margin-top: 8px;">Refresh Traffic</button>
                 </div>
 
                 <div class="control-divider"></div>
@@ -110,6 +136,12 @@
                     <div id="legend" class="legend"></div>
                 </div>
             </aside>
+            <button id="panel-toggle" class="panel-toggle" aria-label="Toggle panel" title="Collapse panel (Ctrl+D)">
+                <svg class="panel-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+        </div>
 
             <!-- Map container -->
             <div class="map-container" role="application" aria-label="HCMC Traffic Map">

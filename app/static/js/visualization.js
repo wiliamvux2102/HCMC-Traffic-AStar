@@ -94,6 +94,7 @@
         populatePOIDropdowns();
         populateCategoryFilter();
         renderLegend();
+        await loadTrafficStatus();
         hideLoading();
     });
 
@@ -114,6 +115,18 @@
             pois: document.getElementById('layer-pois'),
             route: document.getElementById('layer-route')
         };
+
+        // Panel toggle (Google Maps style)
+        state.ui.panelToggle = document.getElementById('panel-toggle');
+        state.ui.sidebarWrapper = document.getElementById('sidebar-wrapper');
+        state.ui.controlsPanel = document.querySelector('.controls-panel');
+
+        // Traffic status elements
+        state.ui.trafficModeEl = document.getElementById('traffic-mode');
+        state.ui.trafficTimestampEl = document.getElementById('traffic-timestamp');
+        state.ui.trafficEdgesEl = document.getElementById('traffic-edges');
+        state.ui.trafficVBoundEl = document.getElementById('traffic-vbound');
+        state.ui.refreshTrafficBtn = document.getElementById('refresh-traffic-btn');
     }
 
     function loadInitialData() {
@@ -402,10 +415,62 @@
             state.layers.route.clearLayers();
         }
 
-        // Add route line
-        const routeFeature = geojson.features.find(f => f.properties.type === 'route');
-        if (routeFeature) {
-            const routeLayer = L.geoJSON(routeFeature, {
+        // Handle both old format (single route line) and new format (FeatureCollection with segments)
+        if (geojson.type === 'FeatureCollection') {
+            // New format: segments with traffic coloring
+            geojson.features.forEach(feature => {
+                const props = feature.properties;
+
+                if (props.type === 'route_segment') {
+                    // Route segment with traffic coloring
+                    const segmentLayer = L.geoJSON(feature, {
+                        style: {
+                            color: props.color,
+                            weight: 5,
+                            opacity: 0.9,
+                            lineCap: 'round',
+                            lineJoin: 'round'
+                        },
+                        onEachFeature: (feature, layer) => {
+                            layer.bindPopup(createRouteSegmentPopup(feature.properties));
+                        }
+                    });
+                    state.layers.route.addLayer(segmentLayer);
+                } else if (props.type === 'start') {
+                    // Start marker
+                    const startLayer = L.geoJSON(feature, {
+                        pointToLayer: (feature, latlng) => {
+                            return L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: 'route-marker',
+                                    html: `<div class="route-marker-icon start" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #0ca30c; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                })
+                            });
+                        }
+                    });
+                    state.layers.route.addLayer(startLayer);
+                } else if (props.type === 'end') {
+                    // End marker
+                    const endLayer = L.geoJSON(feature, {
+                        pointToLayer: (feature, latlng) => {
+                            return L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: 'route-marker',
+                                    html: `<div class="route-marker-icon end" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #d03b3b; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                })
+                            });
+                        }
+                    });
+                    state.layers.route.addLayer(endLayer);
+                }
+            });
+        } else if (geojson.type === 'Feature') {
+            // Old format: single route line
+            const routeLayer = L.geoJSON(geojson, {
                 style: {
                     color: '#2a78d6',
                     weight: 4,
@@ -421,42 +486,6 @@
             state.layers.route.addLayer(routeLayer);
         }
 
-        // Add start marker
-        const startFeature = geojson.features.find(f => f.properties.type === 'start');
-        if (startFeature) {
-            const startLayer = L.geoJSON(startFeature, {
-                pointToLayer: (feature, latlng) => {
-                    return L.marker(latlng, {
-                        icon: L.divIcon({
-                            className: 'route-marker',
-                            html: `<div class="route-marker-icon start" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #0ca30c; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
-                        })
-                    });
-                }
-            });
-            state.layers.route.addLayer(startLayer);
-        }
-
-        // Add end marker
-        const endFeature = geojson.features.find(f => f.properties.type === 'end');
-        if (endFeature) {
-            const endLayer = L.geoJSON(endFeature, {
-                pointToLayer: (feature, latlng) => {
-                    return L.marker(latlng, {
-                        icon: L.divIcon({
-                            className: 'route-marker',
-                            html: `<div class="route-marker-icon end" style="width: 24px; height: 24px; border-radius: 50%; border: 3px solid var(--surface-3); background: #d03b3b; box-shadow: 0 2px 6px rgba(0,0,0,0.3);"></div>`,
-                            iconSize: [24, 24],
-                            iconAnchor: [12, 12]
-                        })
-                    });
-                }
-            });
-            state.layers.route.addLayer(endLayer);
-        }
-
         // Fit map to route
         if (state.layers.route.getLayers().length > 0) {
             const bounds = state.layers.route.getBounds();
@@ -465,6 +494,21 @@
 
         updateLayerVisibility('route', true);
         state.data.currentRoute = routeInfo;
+    }
+
+    function createRouteSegmentPopup(props) {
+        const status = props.is_jammed ? '🔴 Traffic Jam' : '🟢 Normal Flow';
+        return `
+            <div class="popup-content">
+                <strong>Route Segment ${props.segment_index + 1}</strong>
+                <table class="popup-table">
+                    <tr><th>Status</th><td>${status}</td></tr>
+                    <tr><th>Current Speed</th><td>${props.current_speed_kph} km/h</td></tr>
+                    <tr><th>Free-flow Speed</th><td>${props.free_flow_speed_kph} km/h</td></tr>
+                    <tr><th>Speed Ratio</th><td>${(props.speed_ratio * 100).toFixed(0)}%</td></tr>
+                </table>
+            </div>
+        `;
     }
 
     function clearRoute() {
@@ -498,6 +542,80 @@
         if (state.ui.loadingEl) {
             state.ui.loadingEl.classList.add('hidden');
         }
+    }
+
+    // ============================================================
+    // Traffic Status
+    // ============================================================
+
+    async function loadTrafficStatus() {
+        try {
+            const response = await fetch('/api/traffic/status');
+            const data = await response.json();
+
+            if (data.status === 'ok') {
+                state.ui.trafficModeEl.textContent = data.mode;
+                state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-' + data.mode.toLowerCase();
+                state.ui.trafficTimestampEl.textContent = formatTimestamp(data.timestamp);
+                state.ui.trafficEdgesEl.textContent = data.edges_with_speed.toLocaleString();
+                state.ui.trafficVBoundEl.textContent = data.v_bound_kmh + ' km/h';
+            } else {
+                state.ui.trafficModeEl.textContent = 'Error';
+                state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-error';
+                state.ui.trafficTimestampEl.textContent = '—';
+                state.ui.trafficEdgesEl.textContent = '—';
+                state.ui.trafficVBoundEl.textContent = '—';
+            }
+        } catch (error) {
+            console.error('Failed to load traffic status:', error);
+            state.ui.trafficModeEl.textContent = 'Error';
+            state.ui.trafficModeEl.className = 'traffic-status-value traffic-mode-error';
+        }
+    }
+
+    function formatTimestamp(isoString) {
+        try {
+            const date = new Date(isoString);
+            return date.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            });
+        } catch {
+            return isoString;
+        }
+    }
+
+    // ============================================================
+    // Panel Toggle (Google Maps style)
+    // ============================================================
+
+    function toggleDashboard() {
+        const sidebar = state.ui.sidebarWrapper || document.getElementById('sidebar-wrapper') || state.ui.controlsPanel;
+        const toggle = state.ui.panelToggle;
+
+        if (!sidebar || !toggle) return;
+
+        const isHidden = sidebar.classList.toggle('hidden');
+        toggle.setAttribute('aria-expanded', !isHidden);
+        toggle.title = isHidden ? 'Expand panel (Ctrl+D)' : 'Collapse panel (Ctrl+D)';
+
+        // Smoothly invalidate Leaflet map size during the 350ms slide animation
+        const startTime = performance.now();
+        const duration = 380; // ms
+
+        function step(currentTime) {
+            if (state.map) {
+                state.map.invalidateSize({ pan: false });
+            }
+            if (currentTime - startTime < duration) {
+                requestAnimationFrame(step);
+            } else if (state.map) {
+                state.map.invalidateSize();
+            }
+        }
+        requestAnimationFrame(step);
     }
 
     // ============================================================
@@ -540,7 +658,8 @@
 
         // Route legend items
         const routeItems = [
-            { label: 'Route', color: '#2a78d6', class: 'route' },
+            { label: 'Route (Normal)', color: '#2a78d6', class: 'normal' },
+            { label: 'Route (Jammed)', color: '#e34948', class: 'jammed' },
             { label: 'Start', color: '#0ca30c', class: 'start' },
             { label: 'End', color: '#d03b3b', class: 'end' }
         ];
@@ -602,6 +721,19 @@
         state.ui.findRouteBtn.addEventListener('click', findRoute);
         state.ui.clearRouteBtn.addEventListener('click', clearRoute);
 
+        // Panel toggle (Google Maps style)
+        if (state.ui.panelToggle && state.ui.controlsPanel) {
+            state.ui.panelToggle.addEventListener('click', toggleDashboard);
+        }
+
+        // Keyboard shortcut for panel toggle (Ctrl+D)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+                e.preventDefault();
+                toggleDashboard();
+            }
+        });
+
         // POI selection changes
         state.ui.startPoiSelect.addEventListener('change', updateRouteButtonState);
         state.ui.endPoiSelect.addEventListener('change', updateRouteButtonState);
@@ -637,6 +769,17 @@
                 updateRouteButtonState();
             });
         });
+
+        // Refresh traffic button
+        if (state.ui.refreshTrafficBtn) {
+            state.ui.refreshTrafficBtn.addEventListener('click', async () => {
+                state.ui.refreshTrafficBtn.disabled = true;
+                state.ui.refreshTrafficBtn.textContent = 'Refreshing...';
+                await loadTrafficStatus();
+                state.ui.refreshTrafficBtn.disabled = false;
+                state.ui.refreshTrafficBtn.textContent = 'Refresh Traffic';
+            });
+        }
     }
 
     function updateRouteButtonState() {

@@ -25,6 +25,32 @@ class TrafficSnapshot:
         str
     ]
 
+    mode: str = ""
+
+    def __post_init__(self):
+        # Infer mode from provenance if not provided
+        if not self.mode:
+            provenance_values = set(self.provenance.values())
+            if "live" in provenance_values:
+                object.__setattr__(self, "mode", "LIVE")
+            elif "replay" in provenance_values:
+                object.__setattr__(self, "mode", "REPLAY")
+            else:
+                object.__setattr__(self, "mode", "FALLBACK")
+        elif self.mode not in {"LIVE", "REPLAY", "FALLBACK"}:
+            raise ValueError(f"Unknown snapshot mode: {self.mode}")
+
+        # Validate speeds and create immutable copies
+        speeds = dict(self.edge_speed)
+        provenance = dict(self.provenance)
+        for key, speed in speeds.items():
+            if not isinstance(key, tuple) or len(key) != 3:
+                raise ValueError(f"Invalid edge key: {key!r}")
+            if not math.isfinite(speed) or speed <= 0:
+                raise ValueError(f"Invalid speed for {key}: {speed}")
+        object.__setattr__(self, "edge_speed", MappingProxyType(speeds))
+        object.__setattr__(self, "provenance", MappingProxyType(provenance))
+
     def speed(
         self,
         u: int,
@@ -44,7 +70,6 @@ class TrafficSnapshot:
             )
 
         return self.edge_speed[key]
-
 
     def source(
         self,
@@ -66,7 +91,6 @@ class TrafficSnapshot:
 
         return self.provenance[key]
 
-
     @property
     def v_bound(self) -> float:
 
@@ -78,7 +102,6 @@ class TrafficSnapshot:
         return max(
             self.edge_speed.values()
         )
-
 
     @property
     def size(self) -> int:

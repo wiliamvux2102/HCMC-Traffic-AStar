@@ -1,5 +1,6 @@
-"""Flask routes for the HCMC Traffic A* visualization."""
+"""Flask routes for the HCMC Traffic A* visualization with realtime traffic."""
 
+from datetime import datetime, timezone, timedelta
 from flask import Blueprint, render_template, jsonify, request
 import json
 from src.visualization import (
@@ -14,12 +15,18 @@ from src.visualization import (
     load_graph,
     load_traffic_snapshot,
 )
+from src.traffic.service import TrafficService
+from src.traffic.models import TrafficSnapshot
+
 
 viz_bp = Blueprint("visualization", __name__)
 
-# Cache graph and snapshot for performance
+# Cache graph for performance (but NOT snapshot - use realtime)
 _cached_graph = None
-_cached_snapshot = None
+_traffic_service = None
+
+# HCMC timezone (UTC+7)
+HCMC_TZ = timezone(timedelta(hours=7))
 
 
 def get_cached_graph():
@@ -30,13 +37,17 @@ def get_cached_graph():
     return _cached_graph
 
 
-def get_cached_snapshot():
-    """Get or load traffic snapshot (cached)."""
-    global _cached_snapshot
-    if _cached_snapshot is None:
-        graph = get_cached_graph()
-        _cached_snapshot = load_traffic_snapshot(graph)
-    return _cached_snapshot
+def get_traffic_service():
+    """Get or create TrafficService (cached)."""
+    global _traffic_service
+    if _traffic_service is None:
+        _traffic_service = TrafficService(edges_path="data/processed/edges_enriched.csv")
+    return _traffic_service
+
+
+def get_current_hcmc_time():
+    """Get current time in HCMC timezone."""
+    return datetime.now(HCMC_TZ)
 
 
 @viz_bp.route("/viz")
@@ -99,7 +110,7 @@ def api_pois():
 
 @viz_bp.route("/api/route", methods=["POST"])
 def api_route():
-    """Find route between two POIs using existing A* implementation."""
+    """Find route between two POIs using realtime traffic data."""
     data = request.get_json()
     start_poi = data.get("start_poi")
     end_poi = data.get("end_poi")
@@ -112,13 +123,15 @@ def api_route():
 
     try:
         graph = get_cached_graph()
-        snapshot = get_cached_snapshot()
-        result = find_path_between_pois(start_poi, end_poi, graph, snapshot)
+        # Use current HCMC time for realtime traffic
+        timestamp = get_current_hcmc_time()
+        snapshot = load_traffic_snapshot(graph, timestamp)
+        result = find_path_between_pois(start_poi, end_poi, graph, snapshot, timestamp)
 
         if "error" in result:
             return jsonify(result), 404
 
-        geojson = generate_route_geojson_with_start_end(result)
+        geojson = generate_route_geojson_with_start_end(result, graph, snapshot)
         return jsonify({
             "route_info": result,
             "geojson": geojson
@@ -132,3 +145,35 @@ def api_categories():
     """Get all POI categories."""
     categories = get_categories()
     return jsonify(categories)
+
+
+@viz_bp.route("/api/traffic/status")
+def api_traffic_status():
+    """Get current traffic service status."""
+    try:
+        service = get_traffic_service()
+        timestamp = get_current_hcmc_time()
+
+        # Try to get snapshot to check status
+        snapshot = service.get_snapshot(timestamp)
+
+        # Count provenance
+        provenance_counts = {}
+        for prov in snapshot.provenance.values():
+            provenance_counts[prov] = provenance_counts.get(prov, 0) + 1
+
+        return jsonify({
+            "status": "ok",
+            "mode": snapshot.mode,
+            "timestamp": timestamp.isoformat(),
+            "edges_with_speed": len(snapshot.edge_speed),
+            "v_bound_kmh": round(snapshot.v_bound, 1),
+            "provenance_counts": provenance_counts,
+            "fallback_available": True
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "timestamp": get_current_hcmc_time().isoformat()
+        }), 500

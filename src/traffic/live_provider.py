@@ -8,7 +8,6 @@ import json
 import pandas as pd
 
 from src.traffic.provider import TrafficProvider
-from src.traffic.grid_fetcher import fetch_grid_snapshot
 from src.traffic.normalizer import normalize_here_response
 from src.traffic.edge_mapper import TrafficEdgeMapper
 from src.traffic.mapping_resolver import (
@@ -20,6 +19,17 @@ from src.traffic.snapshot_builder import (
 )
 from src.traffic.snapshot import dataframe_to_snapshot
 from src.traffic.models import TrafficSnapshot
+
+# Lazy import to avoid HERE_API_KEY requirement at module load
+_fetch_grid_snapshot = None
+
+
+def _get_grid_fetcher():
+    global _fetch_grid_snapshot
+    if _fetch_grid_snapshot is None:
+        from src.traffic.grid_fetcher import fetch_grid_snapshot
+        _fetch_grid_snapshot = fetch_grid_snapshot
+    return _fetch_grid_snapshot
 
 
 class LiveProvider(TrafficProvider):
@@ -230,8 +240,9 @@ class LiveProvider(TrafficProvider):
         # 2. Fetch full HERE grid
         # ---------------------------------------------
 
+        fetch_grid = _get_grid_fetcher()
         raw_folder = (
-            fetch_grid_snapshot()
+            fetch_grid()
         )
 
         # ---------------------------------------------

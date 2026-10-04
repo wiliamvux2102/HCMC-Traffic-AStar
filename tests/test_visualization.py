@@ -4,7 +4,7 @@ import sys
 import os
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../src'))
 
 from visualization import (
     load_nodes,
@@ -21,7 +21,9 @@ from visualization import (
     load_graph,
     load_traffic_snapshot,
     create_fallback_snapshot,
+    get_current_hcmc_time,
 )
+
 
 def test_data_loading():
     """Test loading all data files."""
@@ -79,6 +81,7 @@ def test_graph_and_snapshot():
     graph = load_graph()
     print(f"  Graph: {len(graph.nodes)} nodes, {len(graph.edge_index)} edges, {len(graph.pois)} POIs")
 
+    # Test the new TrafficService-based snapshot loading
     snapshot = load_traffic_snapshot(graph)
     print(f"  Snapshot: {len(snapshot.edge_speed)} edges, mode={snapshot.mode}, v_bound={snapshot.v_bound:.1f} km/h")
 
@@ -86,12 +89,16 @@ def test_graph_and_snapshot():
     fallback = create_fallback_snapshot(graph)
     print(f"  Fallback: {len(fallback.edge_speed)} edges, mode={fallback.mode}, v_bound={fallback.v_bound:.1f} km/h")
 
+    # Test current time function
+    current_time = get_current_hcmc_time()
+    print(f"  Current HCMC time: {current_time.isoformat()}")
+
     print("Graph and snapshot test PASSED")
 
 
 def test_route_finding():
-    """Test route finding between POIs using existing A*."""
-    print("\nTesting route finding (using existing A* infrastructure)...")
+    """Test route finding between POIs using existing A* with realtime traffic."""
+    print("\nTesting route finding (using existing A* infrastructure with realtime traffic)...")
 
     graph = load_graph()
     snapshot = load_traffic_snapshot(graph)
@@ -106,6 +113,7 @@ def test_route_finding():
 
     print(f"  Finding route from {start_poi} to {end_poi}...")
 
+    # Test with the new API that uses timestamp
     result = find_path_between_pois(start_poi, end_poi, graph, snapshot)
 
     if 'error' in result:
@@ -157,6 +165,8 @@ def test_visualization_imports():
         find_path_between_pois as fpbp,
         generate_route_geojson as grg,
         generate_route_geojson_with_start_end as grgwse,
+        get_all_pois as gap,
+        get_current_hcmc_time as gcht,
     )
     print("  route_plot module: OK")
 

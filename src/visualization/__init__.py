@@ -20,6 +20,7 @@ from src.visualization.route_plot import (
     find_path_between_pois,
     generate_route_geojson,
     generate_route_geojson_with_start_end,
+    get_current_hcmc_time,
 )
 
 __all__ = [
@@ -39,4 +40,5 @@ __all__ = [
     "find_path_between_pois",
     "generate_route_geojson",
     "generate_route_geojson_with_start_end",
+    "get_current_hcmc_time",
 ]
