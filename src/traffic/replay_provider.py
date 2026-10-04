@@ -1,46 +1,61 @@
-import pandas as pd
+# src/traffic/replay_provider.py
 
-from .provider import TrafficProvider
-from .snapshot import snapshot_from_dataframe
-from .normalizer import normalize_speed
-from .time_utils import normalize_timestamp, parse_timestamp
+from datetime import datetime
+from pathlib import Path
+
+from src.traffic.provider import TrafficProvider
+from src.traffic.snapshot import load_snapshot_csv
 
 
-class ReplayTrafficProvider(
-    TrafficProvider
-):
+class ReplayProvider(TrafficProvider):
 
     def __init__(
         self,
-        snapshot_path: str
+        snapshot_root: str
+        = "data/traffic/snapshots"
     ):
-        self.snapshot_path = (
-            snapshot_path
+        self.snapshot_root = Path(
+            snapshot_root
         )
+
+
+    def _find_latest_snapshot(
+        self
+    ) -> Path:
+
+        files = list(
+            self.snapshot_root.glob(
+                "**/*-complete.csv"
+            )
+        )
+
+        if not files:
+            raise FileNotFoundError(
+                "No replay snapshots available"
+            )
+
+        return max(
+            files,
+            key=lambda p:
+                p.stat().st_mtime
+        )
+
 
     def get_snapshot(
         self,
-        timestamp: str
+        timestamp: datetime
     ):
 
-        df = pd.read_csv(
-            self.snapshot_path
+        path = (
+            self._find_latest_snapshot()
         )
 
-        if "timestamp" not in df.columns or df.empty:
-            raise ValueError("Replay CSV must retain its original snapshot timestamp")
-        timestamps = df["timestamp"].map(normalize_timestamp).unique()
-        if len(timestamps) != 1:
-            raise ValueError("Replay CSV must contain exactly one snapshot")
-        actual_timestamp = timestamps[0]
-        if parse_timestamp(actual_timestamp) > parse_timestamp(timestamp):
-            raise ValueError("Replay snapshot is newer than the requested departure")
-        # Report REPLAY instead of labeling previously recorded data as live.
-        df["provenance"] = "replay"
-        df["speed_kph"] = df["speed_kph"].map(normalize_speed)
-        df = df.dropna(subset=["speed_kph"])
+        print(
+            "Using replay snapshot:",
+            path
+        )
 
-        return snapshot_from_dataframe(
-            df,
-            actual_timestamp
+        return load_snapshot_csv(
+            str(path),
+            timestamp.isoformat()
         )

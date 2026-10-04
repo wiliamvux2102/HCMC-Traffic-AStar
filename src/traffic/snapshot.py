@@ -1,66 +1,109 @@
+# src/traffic/snapshot.py
+
 import pandas as pd
 import math
 from decimal import Decimal
 
-from .models import TrafficSnapshot
+from src.traffic.models import (
+    EdgeKey,
+    TrafficSnapshot
+)
 
 
-def edge_integer(value):
-    number = Decimal(str(value))
-    if not number.is_finite() or number != number.to_integral_value():
-        raise ValueError(f"Invalid integer edge ID: {value}")
-    return int(number)
+REQUIRED_COLUMNS = {
+    "source",
+    "target",
+    "edge_key",
+    "speed_kph",
+    "provenance",
+}
 
 
-def snapshot_from_dataframe(
+def dataframe_to_snapshot(
     df: pd.DataFrame,
     timestamp: str
 ) -> TrafficSnapshot:
-    """
-        Create TrafficSnapshot from DataFrame
-    """
 
-    required = {
-        "source",
-        "target",
-        "edge_key",
-        "speed_kph",
-        "provenance",
-    }
-
-    missing = required - set(df.columns)
+    missing = (
+        REQUIRED_COLUMNS
+        - set(df.columns)
+    )
 
     if missing:
         raise ValueError(
-            f"Snapshot missing columns: {missing}"
+            f"Missing snapshot columns: {missing}"
         )
+
+
+    if df["speed_kph"].isna().any():
+        raise ValueError(
+            "Snapshot contains missing speed"
+        )
+
+
+    if (
+        df["speed_kph"] <= 0
+    ).any():
+        raise ValueError(
+            "Snapshot contains speed <= 0"
+        )
+
+
+    duplicated = df.duplicated(
+        subset=[
+            "source",
+            "target",
+            "edge_key"
+        ]
+    )
+
+    if duplicated.any():
+        raise ValueError(
+            "Snapshot contains duplicated OSM edges"
+        )
+
 
     edge_speed = {}
+
     provenance = {}
 
-    for row in df.itertuples(index=False):
 
-        key = (
-            edge_integer(row.source),
-            edge_integer(row.target),
-            edge_integer(row.edge_key),
+    for row in df.itertuples(
+        index=False
+    ):
+
+        key: EdgeKey = (
+            int(row.source),
+            int(row.target),
+            int(row.edge_key)
         )
 
-        speed = float(row.speed_kph)
+        edge_speed[key] = float(
+            row.speed_kph
+        )
 
-        if not math.isfinite(speed) or speed <= 0:
-            raise ValueError(
-                f"Invalid speed {speed} for {key}"
-            )
+        provenance[key] = str(
+            row.provenance
+        )
 
-        if key in edge_speed:
-            raise ValueError(f"Duplicate edge in snapshot: {key}")
-        edge_speed[key] = speed
-
-        provenance[key] = row.provenance
 
     return TrafficSnapshot(
         timestamp=timestamp,
         edge_speed=edge_speed,
-        provenance=provenance,
+        provenance=provenance
+    )
+
+
+def load_snapshot_csv(
+    path: str,
+    timestamp: str
+) -> TrafficSnapshot:
+
+    df = pd.read_csv(
+        path
+    )
+
+    return dataframe_to_snapshot(
+        df,
+        timestamp
     )
