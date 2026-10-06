@@ -1,0 +1,1095 @@
+/* HCMC Traffic A* Visualization - Google Maps Theme */
+
+:root {
+    --sidebar-width: 380px;
+
+    /* Google Maps Light Palette */
+    --surface-1: #e8eaed;       /* Map ground / canvas */
+    --surface-2: #f1f3f4;       /* Subtle input & chip fill */
+    --surface-3: #ffffff;       /* Card & sidebar surface */
+    --surface-hover: #e8f0fe;   /* Active tint */
+
+    --text-primary: #202124;
+    --text-secondary: #5f6368;
+    --text-muted: #80868b;
+
+    --border-color: #dadce0;
+    --border-subtle: #e8eaed;
+    --border-focus: #1a73e8;
+
+    /* Google Brand & Traffic Status Colors */
+    --google-blue: #1a73e8;
+    --google-blue-hover: #1557b0;
+    --google-blue-light: #e8f0fe;
+
+    --google-green: #188038;
+    --google-green-light: #e6f4ea;
+
+    --google-red: #d93025;
+    --google-red-light: #fce8e6;
+
+    --google-yellow: #f29900;
+    --google-yellow-light: #fef7e0;
+
+    /* Route styling */
+    --route-normal: #1a73e8;
+    --route-jammed: #d93025;
+    --route-casing: #ffffff;
+
+    /* Elevation Shadows (Material Design) */
+    --shadow-1: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+    --shadow-2: 0 1px 3px 0 rgba(60, 64, 67, 0.3), 0 4px 8px 3px rgba(60, 64, 67, 0.15);
+    --shadow-panel: 0 1px 4px rgba(0, 0, 0, 0.18);
+
+    /* Animation timing */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --duration-standard: 350ms;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --surface-1: #17181a;
+        --surface-2: #242528;
+        --surface-3: #2c2d30;
+        --surface-hover: #353b48;
+
+        --text-primary: #e8eaed;
+        --text-secondary: #9aa0a6;
+        --text-muted: #80868b;
+
+        --border-color: #3c4043;
+        --border-subtle: #303134;
+        --border-focus: #8ab4f8;
+
+        --google-blue: #8ab4f8;
+        --google-blue-hover: #aecbfa;
+        --google-blue-light: #283347;
+
+        --google-green: #81c995;
+        --google-green-light: #1e3a2b;
+
+        --google-red: #f28b82;
+        --google-red-light: #3c2424;
+
+        --google-yellow: #fdd663;
+        --google-yellow-light: #3d351e;
+
+        --route-normal: #8ab4f8;
+        --route-jammed: #f28b82;
+        --route-casing: #202124;
+
+        --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.45);
+        --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.55);
+        --shadow-panel: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+}
+
+/* Base reset */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Google Sans", Roboto, system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    background-color: var(--surface-1);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+}
+
+/* App Shell */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* Header */
+.app-header {
+    height: 52px;
+    background: var(--surface-3);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    z-index: 1060;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
+}
+
+.header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--google-red-light);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+}
+
+.app-subtitle {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.traffic-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.traffic-mode-badge.mode-live {
+    background: var(--google-green-light);
+    color: var(--google-green);
+    border-color: transparent;
+}
+.traffic-mode-badge.mode-live .badge-dot {
+    background: var(--google-green);
+    box-shadow: 0 0 0 2px rgba(24, 128, 56, 0.2);
+}
+
+.traffic-mode-badge.mode-replay {
+    background: var(--google-yellow-light);
+    color: var(--google-yellow);
+    border-color: transparent;
+}
+.traffic-mode-badge.mode-replay .badge-dot {
+    background: var(--google-yellow);
+}
+
+.traffic-mode-badge.mode-fallback {
+    background: var(--surface-2);
+    color: var(--text-secondary);
+}
+
+/* Main Layout */
+.app-main {
+    display: flex;
+    flex: 1;
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+}
+
+/* Sidebar Wrapper (Google Maps Floating Panel Style) */
+.sidebar-wrapper {
+    position: relative;
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    height: 100%;
+    z-index: 1050;
+    transition: margin-left var(--duration-standard) var(--ease-standard);
+    margin-left: 0;
+    overflow: visible;
+}
+
+.sidebar-wrapper.hidden {
+    margin-left: calc(-1 * var(--sidebar-width));
+}
+
+.controls-panel {
+    width: 100%;
+    height: 100%;
+    background: var(--surface-3);
+    border-right: 1px solid var(--border-color);
+    padding: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: var(--shadow-panel);
+}
+
+/* Panel Scrollbar styling */
+.controls-panel::-webkit-scrollbar {
+    width: 6px;
+}
+.controls-panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+.controls-panel::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 3px;
+}
+.controls-panel::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Google Maps Sidebar Edge Tab Button */
+.panel-toggle {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 48px;
+    border: 1px solid var(--border-color);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.16);
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+    z-index: 1051;
+    padding: 0;
+    user-select: none;
+}
+
+.panel-toggle:hover {
+    background: var(--surface-2);
+    color: var(--google-blue);
+    box-shadow: 3px 0 8px rgba(0, 0, 0, 0.22);
+}
+
+.panel-toggle:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+}
+
+.panel-toggle-icon {
+    display: block;
+    transition: transform var(--duration-standard) var(--ease-standard);
+}
+
+.sidebar-wrapper.hidden .panel-toggle-icon {
+    transform: rotate(180deg);
+}
+
+/* Travel Mode Bar */
+.travel-mode-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    margin: -16px -16px 14px -16px;
+    padding: 0 8px;
+    background: var(--surface-3);
+}
+
+.mode-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 4px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.mode-tab.active {
+    color: var(--google-blue);
+    border-bottom-color: var(--google-blue);
+}
+
+.mode-tab:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Directions Card (Google Maps Style) */
+.directions-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 16px;
+}
+
+.waypoints-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.waypoints-indicators {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 80px;
+    padding: 6px 0;
+}
+
+.waypoint-dot.start {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #188038;
+    background: #ffffff;
+}
+
+.waypoint-line {
+    width: 2px;
+    height: 38px;
+    background-image: linear-gradient(to bottom, #9aa0a6 33%, rgba(255,255,255,0) 0%);
+    background-position: left;
+    background-size: 2px 6px;
+    background-repeat: repeat-y;
+}
+
+.waypoint-pin.end {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.waypoints-inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.control-select {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.control-select:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 2px var(--google-blue-light);
+}
+
+.swap-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.swap-btn:hover {
+    background: var(--surface-2);
+    color: var(--google-blue);
+    transform: rotate(180deg);
+}
+
+.directions-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 38px;
+    padding: 0 18px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+}
+
+.btn-primary.btn-directions {
+    flex: 1;
+    background: var(--google-blue);
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.4);
+}
+
+.btn-primary.btn-directions:hover:not(:disabled) {
+    background: var(--google-blue-hover);
+    box-shadow: 0 2px 6px rgba(26, 115, 232, 0.5);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-secondary.btn-clear {
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    padding: 0 14px;
+}
+
+.btn-secondary.btn-clear:hover {
+    background: var(--surface-2);
+    color: var(--google-red);
+}
+
+/* Card Sections */
+.card-section {
+    padding: 12px 0;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.section-title {
+    margin: 0 0 10px 0;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.section-header .section-title {
+    margin-bottom: 0;
+}
+
+.btn-icon-subtle {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.2s ease;
+}
+
+.btn-icon-subtle:hover {
+    background: var(--surface-2);
+    color: var(--google-blue);
+    transform: rotate(45deg);
+}
+
+/* Route Summary Card (Google Maps Trip Card) */
+.route-summary-card {
+    background: var(--surface-3);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px;
+    box-shadow: var(--shadow-1);
+}
+
+.route-hero {
+    margin-bottom: 12px;
+}
+
+.route-hero-primary {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.route-duration {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--google-green);
+    line-height: 1;
+}
+
+.route-duration.jammed {
+    color: var(--google-red);
+}
+
+.route-status-pill {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background: var(--google-green-light);
+    color: var(--google-green);
+}
+
+.route-status-pill.jammed {
+    background: var(--google-red-light);
+    color: var(--google-red);
+}
+
+.route-hero-secondary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.route-stat {
+    font-weight: 500;
+}
+
+.route-stat-dot {
+    color: var(--text-muted);
+}
+
+/* Google Maps Traffic Distribution Bar */
+.traffic-progress-container {
+    margin: 12px 0;
+}
+
+.traffic-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    background: var(--border-subtle);
+}
+
+.traffic-segment.normal {
+    background: var(--route-normal);
+}
+
+.traffic-segment.jammed {
+    background: var(--route-jammed);
+}
+
+.traffic-bar-legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.legend-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.hint-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+}
+.hint-dot.normal { background: var(--route-normal); }
+.hint-dot.jammed { background: var(--route-jammed); }
+
+.route-steps-summary {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+}
+
+.step-bullet {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.step-bullet.origin { background: #188038; }
+.step-bullet.destination { background: #ea4335; }
+
+.step-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.step-label {
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+
+.step-name {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Empty State */
+.route-empty-state {
+    padding: 20px 10px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.empty-title {
+    margin: 0 0 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.empty-desc {
+    margin: 0;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Traffic Status Grid */
+.traffic-status-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.status-cell {
+    background: var(--surface-2);
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cell-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.cell-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.cell-value.pill-mode {
+    color: var(--google-blue);
+    font-weight: 700;
+}
+
+/* Layer Filter Chips (Google Maps Filter Chips) */
+.layer-chips-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.layer-chip {
+    cursor: pointer;
+}
+
+.layer-chip input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.chip-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    background: var(--surface-3);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.layer-chip:hover .chip-content {
+    background: var(--surface-2);
+    color: var(--text-primary);
+}
+
+.layer-chip input:checked + .chip-content {
+    background: var(--google-blue-light);
+    color: var(--google-blue);
+    border-color: var(--google-blue);
+    font-weight: 700;
+}
+
+/* Legend Grid */
+.legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-swatch.normal {
+    background: var(--route-normal);
+    border-radius: 2px;
+    height: 4px;
+}
+
+.legend-swatch.jammed {
+    background: var(--route-jammed);
+    border-radius: 2px;
+    height: 4px;
+}
+
+.legend-swatch.start {
+    background: #188038;
+}
+
+.legend-swatch.end {
+    background: #ea4335;
+}
+
+/* Map Container */
+.map-container {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background: var(--surface-1);
+}
+
+.map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Google Maps Spinner */
+.map-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(2px);
+    color: var(--text-secondary);
+    z-index: 1000;
+    gap: 12px;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.map-loading.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.google-spinner {
+    width: 40px;
+    height: 40px;
+}
+
+.spinner-circle {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--border-subtle);
+    border-top-color: var(--google-blue);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* ============================================================
+   Leaflet Customization for Google Maps Look
+   ============================================================ */
+
+.leaflet-container {
+    font-family: inherit;
+    background: #e5e3df; /* Classic Google Maps neutral tile background */
+}
+
+/* Google Maps Zoom Control in bottom right */
+.leaflet-control-zoom {
+    border: none !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3) !important;
+    overflow: hidden;
+    margin-right: 14px !important;
+    margin-bottom: 24px !important;
+}
+
+.leaflet-control-zoom a {
+    width: 40px !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    font-size: 20px !important;
+    color: #5f6368 !important;
+    background: var(--surface-3) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.leaflet-control-zoom a:last-child {
+    border-bottom: none !important;
+}
+
+.leaflet-control-zoom a:hover {
+    background: var(--surface-2) !important;
+    color: var(--google-blue) !important;
+}
+
+/* Leaflet Popup (Google Maps Card Style) */
+.leaflet-popup-content-wrapper {
+    background: var(--surface-3);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border: none;
+    padding: 0;
+}
+
+.leaflet-popup-content {
+    margin: 12px 16px;
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.leaflet-popup-tip {
+    background: var(--surface-3);
+    box-shadow: none;
+}
+
+.popup-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.popup-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.popup-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.popup-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 400;
+    padding: 2px 8px 2px 0;
+}
+
+.popup-table td {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+/* Google Maps Markers */
+.gm-pin-start {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #188038;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gm-pin-ring {
+    width: 6px;
+    height: 6px;
+    background: #ffffff;
+    border-radius: 50%;
+}
+
+.gm-pin-destination {
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.4));
+    transition: transform 0.15s ease;
+}
+
+.gm-pin-destination:hover {
+    transform: scale(1.15) translateY(-2px);
+}
+
+/* POI Circular Badge Markers */
+.gm-poi-pin {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--pin-color, #1a73e8);
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.poi-marker:hover .gm-poi-pin {
+    transform: scale(1.25);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 320px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-main {
+        flex-direction: column;
+    }
+
+    .sidebar-wrapper {
+        width: 100%;
+        max-height: 50vh;
+        transition: margin-top var(--duration-standard) var(--ease-standard);
+        margin-left: 0 !important;
+    }
+
+    .sidebar-wrapper.hidden {
+        margin-top: -50vh;
+        margin-left: 0 !important;
+    }
+
+    .controls-panel {
+        width: 100%;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        max-height: 50vh;
+    }
+
+    .panel-toggle {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 48px;
+        height: 22px;
+        border-radius: 0 0 8px 8px;
+        border-top: none;
+        border-left: 1px solid var(--border-color);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+
+    .panel-toggle-icon {
+        transform: rotate(90deg);
+    }
+
+    .sidebar-wrapper.hidden .panel-toggle-icon {
+        transform: rotate(270deg);
+    }
+}

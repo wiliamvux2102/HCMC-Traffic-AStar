@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>HCMC Traffic A* - Realtime Navigation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/visualization.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <!-- Google Maps Style Top App Bar -->
+        <header class="app-header" role="banner">
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="brand-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 12 8 12s8-6.75 8-12c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" fill="#EA4335"/>
+                            <circle cx="12" cy="10" r="1.5" fill="#FFFFFF"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="app-title">HCMC Traffic A*</h1>
+                        <p class="app-subtitle">Realtime Traffic Routing · Ho Chi Minh City</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <span id="header-traffic-badge" class="traffic-mode-badge mode-loading">
+                        <span class="badge-dot"></span>
+                        <span id="header-traffic-text">Checking Traffic...</span>
+                    </span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main class="app-main" role="main">
+            <!-- Sidebar with Google Maps style collapse tab -->
+            <div class="sidebar-wrapper" id="sidebar-wrapper">
+                <aside class="controls-panel" aria-label="Map controls">
+
+                    <!-- Travel Mode Header (Google Maps Style) -->
+                    <div class="travel-mode-bar" role="tablist" aria-label="Travel Modes">
+                        <button class="mode-tab active" role="tab" aria-selected="true" title="Driving">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+                            </svg>
+                            <span>Drive</span>
+                        </button>
+                        <button class="mode-tab" role="tab" aria-selected="false" title="Two-wheeler" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M15.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM5 12c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm14-8.5c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zm0 8.5c-1.9 0-3.5-1.6-3.5-3.5s1.6-3.5 3.5-3.5 3.5 1.6 3.5 3.5-1.6 3.5-3.5 3.5zm-8.2-9.7l-2.3 3.7h3.8l2-3.7z"/>
+                            </svg>
+                            <span>Motorbike</span>
+                        </button>
+                        <button class="mode-tab" role="tab" aria-selected="false" title="Transit" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2c-4.42 0-8 .5-8 4v10c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4zm5.5 14c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm-11 0c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11.5-6H6V7h12v3z"/>
+                            </svg>
+                            <span>Transit</span>
+                        </button>
+                    </div>
+
+                    <!-- Directions Card (Google Maps Style) -->
+                    <div class="directions-card">
+                        <div class="waypoints-container">
+                            <div class="waypoints-indicators" aria-hidden="true">
+                                <span class="waypoint-dot start"></span>
+                                <span class="waypoint-line"></span>
+                                <span class="waypoint-pin end">
+                                    <svg width="14" height="16" viewBox="0 0 24 24" fill="#EA4335">
+                                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                    </svg>
+                                </span>
+                            </div>
+
+                            <div class="waypoints-inputs">
+                                <div class="input-wrapper">
+                                    <select id="start-poi" class="control-select" aria-label="Starting location">
+                                        <option value="">Choose starting point...</option>
+                                    </select>
+                                </div>
+                                <div class="input-wrapper">
+                                    <select id="end-poi" class="control-select" aria-label="Destination location">
+                                        <option value="">Choose destination...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button id="swap-poi-btn" class="swap-btn" title="Reverse starting point and destination" aria-label="Swap locations">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M16 17.01V10h-2v7.01h-3L15 21l4-3.99h-3zM9 3L5 6.99h3V14h2V6.99h3L9 3z"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="directions-actions">
+                            <button id="find-route-btn" class="btn btn-primary btn-directions" disabled>
+                                <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M21.71 11.29l-9-9a.996.996 0 0 0-1.41 0l-9 9a.996.996 0 0 0 0 1.41l9 9c.39.39 1.02.39 1.41 0l9-9a.996.996 0 0 0 0-1.41zm-8.71 6.29l-6.5-6.5L13 4.5V8c4.42 0 8 3.58 8 8v1.5c-1.38-1.55-3.37-2.5-5.6-2.5-1.4 0-2.69.37-3.8 1.01V17.58z"/>
+                                </svg>
+                                <span class="btn-text">Directions</span>
+                                <span class="btn-loading" hidden>Routing...</span>
+                            </button>
+                            <button id="clear-route-btn" class="btn btn-secondary btn-clear" hidden title="Clear Route">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Route Summary Card (Google Maps Trip Summary) -->
+                    <div class="card-section">
+                        <div id="route-info" class="route-summary-card" hidden>
+                            <div class="route-hero">
+                                <div class="route-hero-primary">
+                                    <span id="route-time-val" class="route-duration">—</span>
+                                    <span id="route-traffic-label" class="route-status-pill normal">Fastest route</span>
+                                </div>
+                                <div class="route-hero-secondary">
+                                    <span id="route-distance" class="route-stat">—</span>
+                                    <span class="route-stat-dot">·</span>
+                                    <span id="route-nodes" class="route-stat">—</span>
+                                    <span class="route-stat-dot">·</span>
+                                    <span id="route-mode-badge" class="route-stat">Traffic A*</span>
+                                </div>
+                            </div>
+
+                            <!-- Google Maps Traffic Distribution Bar -->
+                            <div class="traffic-progress-container" title="Traffic along route">
+                                <div class="traffic-bar" id="route-traffic-bar">
+                                    <div class="traffic-segment normal" style="width: 100%;"></div>
+                                </div>
+                                <div class="traffic-bar-legend">
+                                    <span class="legend-hint"><span class="hint-dot normal"></span> Normal flow</span>
+                                    <span class="legend-hint"><span class="hint-dot jammed"></span> Traffic jam</span>
+                                </div>
+                            </div>
+
+                            <div class="route-steps-summary">
+                                <div class="step-item">
+                                    <span class="step-bullet origin"></span>
+                                    <div class="step-text">
+                                        <span class="step-label">From</span>
+                                        <span id="route-start" class="step-name">—</span>
+                                    </div>
+                                </div>
+                                <div class="step-item">
+                                    <span class="step-bullet destination"></span>
+                                    <div class="step-text">
+                                        <span class="step-label">To</span>
+                                        <span id="route-end" class="step-name">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="route-placeholder" class="route-empty-state">
+                            <div class="empty-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                                </svg>
+                            </div>
+                            <p class="empty-title">Select start and destination</p>
+                            <p class="empty-desc">Traffic-aware A* finds the optimal path with realtime road conditions.</p>
+                        </div>
+                    </div>
+
+                    <!-- Live Traffic Conditions Card -->
+                    <div class="card-section">
+                        <div class="section-header">
+                            <h2 class="section-title">Traffic Feed</h2>
+                            <button id="refresh-traffic-btn" class="btn-icon-subtle" title="Refresh realtime traffic">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M23 4v6h-6M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div id="traffic-status" class="traffic-status-grid">
+                            <div class="status-cell">
+                                <span class="cell-label">Data Mode</span>
+                                <span id="traffic-mode" class="cell-value pill-mode">Loading...</span>
+                            </div>
+                            <div class="status-cell">
+                                <span class="cell-label">Network V_max</span>
+                                <span id="traffic-vbound" class="cell-value">—</span>
+                            </div>
+                            <div class="status-cell">
+                                <span class="cell-label">Edges Monitored</span>
+                                <span id="traffic-edges" class="cell-value">—</span>
+                            </div>
+                            <div class="status-cell">
+                                <span class="cell-label">Last Snapshot</span>
+                                <span id="traffic-timestamp" class="cell-value">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Map Layers Chips (Google Maps Filter Style) -->
+                    <div class="card-section">
+                        <h2 class="section-title">Map Layers</h2>
+                        <div class="layer-chips-group">
+                            <label class="layer-chip" for="layer-route">
+                                <input type="checkbox" id="layer-route" checked>
+                                <span class="chip-content">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 19 9 12 14 16 20 5"/></svg>
+                                    <span>Route</span>
+                                </span>
+                            </label>
+                            <label class="layer-chip" for="layer-pois">
+                                <input type="checkbox" id="layer-pois" checked>
+                                <span class="chip-content">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg>
+                                    <span>POIs</span>
+                                </span>
+                            </label>
+                            <label class="layer-chip" for="layer-edges">
+                                <input type="checkbox" id="layer-edges">
+                                <span class="chip-content">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19L19 4M10 20l9-9"/></svg>
+                                    <span>Roads</span>
+                                </span>
+                            </label>
+                            <label class="layer-chip" for="layer-nodes">
+                                <input type="checkbox" id="layer-nodes">
+                                <span class="chip-content">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="4"/></svg>
+                                    <span>Nodes</span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Filter POIs -->
+                    <div class="card-section">
+                        <h2 class="section-title">Filter by Category</h2>
+                        <div class="control-row">
+                            <select id="poi-category" class="control-select" aria-label="Filter POIs by category">
+                                <option value="">All Categories (159 locations)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Route & POI Legend -->
+                    <div class="card-section">
+                        <h2 class="section-title">Legend</h2>
+                        <div id="legend" class="legend-grid"></div>
+                    </div>
+
+                </aside>
+
+                <!-- Google Maps Style Edge Tab Button -->
+                <button id="panel-toggle" class="panel-toggle" aria-label="Toggle side panel" title="Collapse side panel (Ctrl+D)">
+                    <svg class="panel-toggle-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Map container (full-screen Google Maps style) -->
+            <div class="map-container" role="application" aria-label="HCMC Traffic Map">
+                <div id="map" class="map"></div>
+                <div id="map-loading" class="map-loading" aria-live="polite">
+                    <div class="google-spinner">
+                        <div class="spinner-circle"></div>
+                    </div>
+                    <p class="loading-label">Loading road network & traffic...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Data injection for initial load -->
+    <script id="initial-data" type="application/json">
+    {
+        "bounds": {{ bounds|tojson }},
+        "center": {{ center|tojson }},
+        "categories": {{ categories|tojson }},
+        "pois": {{ pois|tojson }}
+    }
+    </script>
+
+    <script src="{{ url_for('static', filename='js/visualization.js') }}"></script>
+</body>
+</html>
