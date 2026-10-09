@@ -137,6 +137,8 @@ def find_path_between_pois(start_poi_id, end_poi_id, graph=None, snapshot=None, 
     return {
         "start_poi": start_poi_id,
         "end_poi": end_poi_id,
+        "start_name": start_poi["name"],
+        "end_name": end_poi["name"],
         "start_node": start_node,
         "end_node": end_node,
         "path_nodes": result.path_nodes,

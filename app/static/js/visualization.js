@@ -117,9 +117,210 @@
         hideLoading();
     });
 
+    // ============================================================
+    // Searchable POI Combobox
+    // ============================================================
+
+    /**
+     * A Google Maps style searchable combobox.
+     * - Type to filter POIs matching the current string (name or POI ID)
+     * - Click or arrow keys + Enter to pick an option
+     * - value property reads/writes the selected POI ID ('' when unselected)
+     */
+    class ComboBox {
+        constructor(container, placeholder, onChange) {
+            this.container = container;
+            this.placeholder = placeholder;
+            this.onChange = onChange;
+            this.pois = [];
+            this.filteredPois = [];
+            this.activeIndex = -1;
+            this._value = '';
+            this._open = false;
+            this._render();
+            this._bindEvents();
+        }
+
+        get value() {
+            return this._value;
+        }
+
+        set value(poiId) {
+            this._value = poiId || '';
+            this.input.value = this._value ? this._poiName(this._value) : '';
+            if (this.onChange) this.onChange();
+        }
+
+        _poiName(poiId) {
+            const poi = this.pois.find(p => p.poi_id === poiId);
+            return poi ? poi.name : '';
+        }
+
+        setPOIs(pois) {
+            this.pois = pois;
+            this.filteredPois = pois;
+            // Refresh displayed text if a selection already exists
+            if (this._value) {
+                this.input.value = this._poiName(this._value);
+            }
+        }
+
+        _render() {
+            this.container.classList.add('combobox');
+            this.container.innerHTML = `
+                <span class="combo-search-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9s2.01-5 4.5-5 4.5 2.01 4.5 5-2.01 5-4.5 5z"/></svg></span>
+                <input type="text" class="combobox-input" placeholder="${this.placeholder}" autocomplete="off" role="combobox" aria-expanded="false" />
+                <span class="combo-chevron"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg></span>
+                <div class="combobox-list" role="listbox"></div>
+            `;
+            this.input = this.container.querySelector('.combobox-input');
+            this.list = this.container.querySelector('.combobox-list');
+        }
+
+        _bindEvents() {
+            // Open dropdown on first click and keep focus in the input
+            // so typing filters immediately (single-click search)
+            this.input.addEventListener('mousedown', () => {
+                if (!this._open) {
+                    this.open();
+                }
+            });
+
+            this.input.addEventListener('focus', () => {
+                if (!this._open) this.open();
+            });
+
+            this.input.addEventListener('input', () => {
+                this._filter(this.input.value);
+                this.open();
+            });
+
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (!this._open) this.open();
+                    else this._moveActive(1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this._moveActive(-1);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this._open && this.activeIndex >= 0) {
+                        this._select(this.filteredPois[this.activeIndex]);
+                    }
+                } else if (e.key === 'Escape') {
+                    this.close();
+                }
+            });
+
+            // Click outside closes dropdown
+            document.addEventListener('mousedown', (e) => {
+                if (!this.container.contains(e.target)) this.close();
+            });
+
+            // Keep the fixed-position list anchored to the input
+            window.addEventListener('resize', () => {
+                if (this._open) this._positionList();
+            });
+            document.querySelector('.controls-panel').addEventListener('scroll', () => {
+                if (this._open) this._positionList();
+            });
+        }
+
+        /** Anchor the fixed dropdown just below the input, over the map. */
+        _positionList() {
+            const rect = this.input.getBoundingClientRect();
+            this.list.style.top = `${rect.bottom + 4}px`;
+            this.list.style.left = `${rect.left}px`;
+            this.list.style.minWidth = `${rect.width}px`;
+        }
+
+        open() {
+            this._open = true;
+            this.container.classList.add('open');
+            this.input.setAttribute('aria-expanded', 'true');
+            this._filter(this.input.value);
+            this._positionList();
+        }
+
+        close() {
+            this._open = false;
+            this.container.classList.remove('open');
+            this.input.setAttribute('aria-expanded', 'false');
+            this.activeIndex = -1;
+            // Restore the selected POI's name when the query was not committed
+            this.input.value = this._value ? this._poiName(this._value) : '';
+        }
+
+        _filter(query) {
+            const q = query.trim().toLowerCase();
+            this.filteredPois = !q
+                ? this.pois
+                : this.pois.filter(p => {
+                    const name = (p.name || '').toLowerCase();
+                    const cat = (p.category || '').toLowerCase();
+                    return name.includes(q) || cat.includes(q) || p.poi_id.toLowerCase().includes(q);
+                });
+            this.activeIndex = this.filteredPois.length > 0 ? 0 : -1;
+            this._renderList();
+        }
+
+        _renderList() {
+            this.list.innerHTML = '';
+            if (this.filteredPois.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'combobox-empty';
+                empty.textContent = 'No matching locations';
+                this.list.appendChild(empty);
+                return;
+            }
+            this.filteredPois.forEach((poi, idx) => {
+                const option = document.createElement('div');
+                option.className = 'combobox-option' + (idx === this.activeIndex ? ' active' : '');
+                option.setAttribute('role', 'option');
+                option.innerHTML = `
+                    <span class="combo-opt-name">${escapeHtml(poi.name)}</span>
+                    <span class="combo-opt-cat">${escapeHtml(CATEGORY_LABELS[poi.category] || poi.category || '')}</span>
+                `;
+                option.addEventListener('mousedown', (e) => {
+                    e.preventDefault(); // keep input focus
+                    this._select(poi);
+                });
+                this.list.appendChild(option);
+            });
+            // Scroll the active option into view within the list only
+            // (scrollIntoView would also scroll the control panel itself)
+            const active = this.list.children[this.activeIndex];
+            if (active) {
+                const listRect = this.list.getBoundingClientRect();
+                const optRect = active.getBoundingClientRect();
+                if (optRect.top < listRect.top) {
+                    this.list.scrollTop -= listRect.top - optRect.top;
+                } else if (optRect.bottom > listRect.bottom) {
+                    this.list.scrollTop += optRect.bottom - listRect.bottom;
+                }
+            }
+        }
+
+        _moveActive(delta) {
+            if (this.filteredPois.length === 0) return;
+            this.activeIndex = (this.activeIndex + delta + this.filteredPois.length) % this.filteredPois.length;
+            this._renderList();
+        }
+
+        _select(poi) {
+            this._value = poi.poi_id;
+            this.input.value = poi.name;
+            this.close();
+            if (this.onChange) this.onChange();
+        }
+    }
+
     function initializeUI() {
-        state.ui.startPoiSelect = document.getElementById('start-poi');
-        state.ui.endPoiSelect = document.getElementById('end-poi');
+        // initializeUI is called before ComboBox class usage in DOMContentLoaded,
+        // but ComboBox needs real DOM elements; build them here
+        state.ui.startPoiSelect = new ComboBox(document.getElementById('start-poi'), 'Search starting point...', () => updateRouteButtonState());
+        state.ui.endPoiSelect = new ComboBox(document.getElementById('end-poi'), 'Search destination...', () => updateRouteButtonState());
         state.ui.swapPoiBtn = document.getElementById('swap-poi-btn');
         state.ui.categorySelect = document.getElementById('poi-category');
         state.ui.findRouteBtn = document.getElementById('find-route-btn');
@@ -451,6 +652,31 @@
         }
     }
 
+    /**
+     * Build one continuous coordinate list covering the whole route.
+     * Uses route_info.path_coordinates when available (the A* path nodes),
+     * otherwise stitches the per-segment LineStrings together in order.
+     */
+    function buildCasingCoords(geojson, routeInfo) {
+        if (routeInfo && Array.isArray(routeInfo.path_coordinates) && routeInfo.path_coordinates.length >= 2) {
+            return routeInfo.path_coordinates.map(coord => [coord[1], coord[0]]); // [lon, lat] -> [lat, lon]
+        }
+
+        const coords = [];
+        geojson.features.forEach(feature => {
+            if (feature.properties && feature.properties.type !== 'route_segment') return;
+            const segmentCoords = feature.geometry && feature.geometry.coordinates;
+            if (!Array.isArray(segmentCoords) || segmentCoords.length === 0) return;
+            segmentCoords.forEach((coord, idx) => {
+                const latlng = [coord[1], coord[0]];
+                if (coords.length === 0 || idx > 0) {
+                    coords.push(latlng);
+                }
+            });
+        });
+        return coords;
+    }
+
     function displayRoute(geojson, routeInfo) {
         if (state.layers.route) {
             state.layers.route.clearLayers();
@@ -460,25 +686,30 @@
         let totalSegmentsCount = 0;
 
         if (geojson.type === 'FeatureCollection') {
-            // First pass: Add route casing line for Google Maps contrast
+            // Single continuous white casing under the whole route.
+            // Drawn once for the entire path (not per segment) so it can never
+            // overlap a neighbouring segment's colored line, which caused
+            // white gaps at every edge joint.
+            const casingCoords = buildCasingCoords(geojson, routeInfo);
+            if (casingCoords.length >= 2) {
+                const casingLayer = L.polyline(casingCoords, {
+                    color: '#ffffff',
+                    weight: 7,
+                    opacity: 0.9,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                    interactive: false
+                });
+                state.layers.route.addLayer(casingLayer);
+            }
+
+            // Colored segments on top of the casing (round caps make
+            // adjacent segments join seamlessly at shared nodes)
             geojson.features.forEach(feature => {
                 const props = feature.properties;
                 if (props.type === 'route_segment') {
                     totalSegmentsCount++;
                     if (props.is_jammed) jammedSegmentsCount++;
-
-                    // White / dark casing underneath
-                    const casingLayer = L.geoJSON(feature, {
-                        style: {
-                            color: '#ffffff',
-                            weight: 7,
-                            opacity: 0.9,
-                            lineCap: 'round',
-                            lineJoin: 'round'
-                        },
-                        interactive: false
-                    });
-                    state.layers.route.addLayer(casingLayer);
 
                     // Main colored line (Blue or Red)
                     const segmentLayer = L.geoJSON(feature, {
@@ -577,6 +808,12 @@
         updateLayerVisibility('route', false);
     }
 
+    /** Look up a POI's display name by its ID from the loaded POI list. */
+    function getPoiName(poiId) {
+        const poi = state.data.pois.find(p => p.poi_id === poiId);
+        return poi ? poi.name : null;
+    }
+
     function showRouteInfo(info, geojson) {
         // Calculate jammed percentage
         let jammedCount = 0;
@@ -634,9 +871,11 @@
             state.ui.routeModeBadge.textContent = modeText;
         }
 
-        // Step endpoints
-        if (state.ui.routeStart) state.ui.routeStart.textContent = info.start_poi;
-        if (state.ui.routeEnd) state.ui.routeEnd.textContent = info.end_poi;
+        // Step endpoints (prefer POI names; fall back to POI ID lookup)
+        const startName = info.start_name || getPoiName(info.start_poi) || info.start_poi;
+        const endName = info.end_name || getPoiName(info.end_poi) || info.end_poi;
+        if (state.ui.routeStart) state.ui.routeStart.textContent = startName;
+        if (state.ui.routeEnd) state.ui.routeEnd.textContent = endName;
 
         state.ui.routeInfo.hidden = false;
         state.ui.routePlaceholder.hidden = true;
@@ -753,20 +992,8 @@
     // ============================================================
 
     function populatePOIDropdowns() {
-        const pois = state.data.pois;
-
-        [state.ui.startPoiSelect, state.ui.endPoiSelect].forEach(select => {
-            while (select.options.length > 1) {
-                select.remove(1);
-            }
-
-            pois.forEach(poi => {
-                const option = document.createElement('option');
-                option.value = poi.poi_id;
-                const catLabel = CATEGORY_LABELS[poi.category] || poi.category;
-                option.textContent = `${poi.name} (${catLabel})`;
-                select.appendChild(option);
-            });
+        [state.ui.startPoiSelect, state.ui.endPoiSelect].forEach(combo => {
+            combo.setPOIs(state.data.pois);
         });
 
         updateRouteButtonState();
@@ -878,9 +1105,8 @@
             }
         });
 
-        // Dropdown changes
-        state.ui.startPoiSelect.addEventListener('change', updateRouteButtonState);
-        state.ui.endPoiSelect.addEventListener('change', updateRouteButtonState);
+        // Combobox changes are handled by the ComboBox's onChange callback
+        // (updateRouteButtonState is invoked whenever a selection changes)
 
         // Filter category change
         state.ui.categorySelect.addEventListener('change', (e) => {
