@@ -13,7 +13,6 @@ from src.visualization import (
     find_path_between_pois,
     generate_route_geojson_with_start_end,
     load_graph,
-    load_traffic_snapshot,
 )
 from src.traffic.service import TrafficService
 from src.traffic.models import TrafficSnapshot
@@ -108,36 +107,80 @@ def api_pois():
     return jsonify(pois)
 
 
-@viz_bp.route("/api/route", methods=["POST"])
+@viz_bp.route(
+    "/api/route",
+    methods=["POST"]
+)
 def api_route():
     """Find route between two POIs using realtime traffic data."""
+
     data = request.get_json()
-    start_poi = data.get("start_poi")
-    end_poi = data.get("end_poi")
+
+    start_poi = data.get(
+        "start_poi"
+    )
+
+    end_poi = data.get(
+        "end_poi"
+    )
 
     if not start_poi or not end_poi:
-        return jsonify({"error": "start_poi and end_poi required"}), 400
+        return jsonify({
+            "error":
+                "start_poi and end_poi required"
+        }), 400
 
     if start_poi == end_poi:
-        return jsonify({"error": "Start and end POI must be different"}), 400
+        return jsonify({
+            "error":
+                "Start and end POI must be different"
+        }), 400
 
     try:
         graph = get_cached_graph()
-        # Use current HCMC time for realtime traffic
-        timestamp = get_current_hcmc_time()
-        snapshot = load_traffic_snapshot(graph, timestamp)
-        result = find_path_between_pois(start_poi, end_poi, graph, snapshot, timestamp)
+
+        timestamp = (
+            get_current_hcmc_time()
+        )
+
+        # Reuse the SAME TrafficService instance.
+        # This preserves the LIVE cache.
+        service = get_traffic_service()
+
+        snapshot = service.get_snapshot(
+            timestamp
+        )
+
+        result = find_path_between_pois(
+            start_poi,
+            end_poi,
+            graph,
+            snapshot,
+            timestamp
+        )
 
         if "error" in result:
-            return jsonify(result), 404
+            return jsonify(
+                result
+            ), 404
 
-        geojson = generate_route_geojson_with_start_end(result, graph, snapshot)
+        geojson = (
+            generate_route_geojson_with_start_end(
+                result,
+                graph,
+                snapshot
+            )
+        )
+
         return jsonify({
             "route_info": result,
             "geojson": geojson
         })
+
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 @viz_bp.route("/api/categories")

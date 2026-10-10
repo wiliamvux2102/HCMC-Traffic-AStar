@@ -33,7 +33,7 @@ class TrafficService:
                 cache_ttl_minutes
         )
 
-        self.replay = ReplayProvider()
+        self.replay = ReplayProvider(edges_path=edges_path)
 
         self.fallback = FallbackProvider(
             edges_path=edges_path
