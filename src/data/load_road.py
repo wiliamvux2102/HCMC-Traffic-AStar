@@ -1,48 +1,59 @@
-import osmnx as ox
 from pathlib import Path
 
+import osmnx as ox
 
-# Center of Ho Chi Minh City
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 CENTER_POINT = (10.7769, 106.7009)
 
-# Radius in meters
+# Distance from the center to each side of the bounding box.
 DISTANCE = 15000
 
-# Output
-RAW_DIR = Path("data/raw/osm")
+RAW_DIR = PROJECT_ROOT / "data/raw/osm"
 GRAPH_FILE = RAW_DIR / "hcmc_drive.graphml"
 
 
 def load_road_network():
-    print("Downloading road network...")
+    print("Loading road network from OpenStreetMap...")
+    print(f"Center: {CENTER_POINT}")
+    print(f"Distance to each side: {DISTANCE} m")
+    print("Simplification: disabled")
+    print("Intermediate OSM road nodes will be retained.")
 
-    G = ox.graph.graph_from_point(
+    graph = ox.graph.graph_from_point(
         center_point=CENTER_POINT,
         dist=DISTANCE,
         dist_type="bbox",
         network_type="drive",
-        simplify=True,
-        retain_all=False
+        simplify=False,
+        retain_all=False,
     )
 
-    print("Graph downloaded.")
-    print(f"Nodes: {len(G.nodes)}")
-    print(f"Edges: {len(G.edges)}")
+    print()
+    print("Road network loaded.")
+    print(f"Nodes: {len(graph.nodes)}")
+    print(f"Edges: {len(graph.edges)}")
 
-    return G
+    return graph
 
 
-def save_road_network(G):
+def save_road_network(graph):
     RAW_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Replace the existing graph only after saving succeeds.
+    temporary_file = RAW_DIR / "hcmc_drive.pending.graphml"
+
     ox.io.save_graphml(
-        G,
-        filepath=GRAPH_FILE
+        graph,
+        filepath=temporary_file,
     )
+
+    temporary_file.replace(GRAPH_FILE)
 
     print(f"Graph saved to: {GRAPH_FILE}")
 
 
 if __name__ == "__main__":
-    G = load_road_network()
-    save_road_network(G)
+    graph = load_road_network()
+    save_road_network(graph)
