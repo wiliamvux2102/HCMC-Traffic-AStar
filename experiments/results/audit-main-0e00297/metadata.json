@@ -1,0 +1,113 @@
+{
+  "git_commit": "0e00297e439d2c74ad3697559b0c89733d43681b",
+  "run_at_utc": "2026-10-11T12:17:39.282475+00:00",
+  "data_validation": {
+    "raw_edges": 546742,
+    "raw_duplicate_edges": 0,
+    "raw_only_edges": 0,
+    "enriched_only_edges": 0,
+    "length_mismatches": 0
+  },
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+  "nodes": 279028,
+  "edges": 546742,
+  "pois": 158,
+  "seed": 3061,
+  "repeats": 3,
+  "pairs": [
+    [
+      "POI0053",
+      "POI0150"
+    ],
+    [
+      "POI0144",
+      "POI0028"
+    ],
+    [
+      "POI0158",
+      "POI0120"
+    ],
+    [
+      "POI0087",
+      "POI0086"
+    ],
+    [
+      "POI0093",
+      "POI0011"
+    ],
+    [
+      "POI0107",
+      "POI0117"
+    ],
+    [
+      "POI0057",
+      "POI0140"
+    ],
+    [
+      "POI0087",
+      "POI0133"
+    ],
+    [
+      "POI0027",
+      "POI0064"
+    ],
+    [
+      "POI0050",
+      "POI0039"
+    ],
+    [
+      "POI0159",
+      "POI0127"
+    ],
+    [
+      "POI0038",
+      "POI0045"
+    ],
+    [
+      "POI0156",
+      "POI0085"
+    ],
+    [
+      "POI0151",
+      "POI0133"
+    ],
+    [
+      "POI0089",
+      "POI0046"
+    ],
+    [
+      "POI0159",
+      "POI0035"
+    ],
+    [
+      "POI0035",
+      "POI0115"
+    ],
+    [
+      "POI0048",
+      "POI0155"
+    ],
+    [
+      "POI0002",
+      "POI0145"
+    ],
+    [
+      "POI0019",
+      "POI0023"
+    ]
+  ],
+  "sha256": {
+    "nodes.csv": "6dfe9454463209d8029c41ccea0b38c7b2fea4e8f91e425ab3f8ffeaca8ce06b",
+    "edges.csv": "27db9dc9cd704eb3065601baaf1d384e14f949d7ded909181ee30d3ef6e548ca",
+    "edges_enriched.csv": "fc6a1af1b8baa91f15bf0403b4044a22e975b8472f62e889c9c12de100beb0c9",
+    "poi_final.csv": "c8851ea0ea6037c35e87826e7f3fd1047a4ac8a3490ef410cfb2ed311adb8282",
+    "poi_node_mapping.csv": "b602f70dcb74a6c4c324a6feeb633ba789cba5dc586eb89730a1fe7d3e2c24ca"
+  },
+  "minimum_length_minus_haversine_m": 3.53683209525224e-08,
+  "negative_geometry_gaps": 0,
+  "heuristic_check_method": "Unchanged project validators with BoundView caching the same immutable snapshot maximum once.",
+  "runtime_method": "Median of 3 searches per pair and algorithm; alternating which algorithm runs first. Constructors and loading excluded; per-query bound scan included.",
+  "replay_source": "data\\traffic\\snapshots\\2026-10-11\\12-12-18-complete.csv"
+}
