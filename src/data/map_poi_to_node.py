@@ -113,6 +113,7 @@ def latlon_to_unit_xyz(latitudes, longitudes):
     lat = np.radians(np.asarray(latitudes, dtype=float))
     lon = np.radians(np.asarray(longitudes, dtype=float))
 
+    # Unit-sphere chord distance preserves spherical nearest-node ordering.
     return np.column_stack((
         np.cos(lat) * np.cos(lon),
         np.cos(lat) * np.sin(lon),
@@ -133,6 +134,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
         * np.sin((lon2 - lon1) / 2) ** 2
     )
 
+    # Clip rounding errors to the valid range before taking the square root.
     return (
         2
         * EARTH_RADIUS_M
@@ -155,6 +157,7 @@ def map_pois_to_nodes():
     print(f"Road nodes: {len(nodes)}")
     print(f"Road edges: {len(edges)}")
 
+    # Restrict candidates so mapped nodes are mutually reachable.
     eligible_nodes = get_largest_scc_nodes(nodes, edges)
 
     print("Loading POIs...")
@@ -183,7 +186,6 @@ def map_pois_to_nodes():
 
     nearest_nodes = eligible_nodes.iloc[indices]
 
-    # Preserve the original seven-column output schema.
     result = pois[POI_COLUMNS].copy()
 
     result["nearest_node"] = nearest_nodes["node_id"].to_numpy()

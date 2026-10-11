@@ -9,9 +9,7 @@ INPUT_FILE = PROJECT_ROOT / "data/raw/poi/poi_osm_raw.pkl"
 OUTPUT_DIR = PROJECT_ROOT / "data/processed"
 OUTPUT_FILE = OUTPUT_DIR / "pois.csv"
 
-# Verified in the raw OSM data:
-# Trường Đại học Bách khoa, ĐHQG TP.HCM
-# 268 Lý Thường Kiệt
+# Verified OSM campus polygon for HCMUT CS1 at 268 Ly Thuong Kiet Street.
 HCMUT_CS1_OSM_ID = ("way", 237665212)
 
 CATEGORY_LIMITS = {
@@ -58,9 +56,6 @@ def process_pois():
 
     print(f"Raw features: {len(gdf)}")
 
-    # --------------------------------------------------
-    # 1. Validate the raw data needed by this script.
-    # --------------------------------------------------
     if "name" not in gdf.columns:
         raise ValueError("Raw POI data is missing the name column.")
 
@@ -83,9 +78,6 @@ def process_pois():
     if gdf.crs is None:
         raise ValueError("Raw POI data is missing its CRS.")
 
-    # --------------------------------------------------
-    # 2. Keep only features with a name.
-    # --------------------------------------------------
     gdf = gdf[gdf["name"].notna()].copy()
 
     print(f"Features with name: {len(gdf)}")
@@ -107,16 +99,11 @@ def process_pois():
             "HCMUT CS1 must have a valid campus polygon."
         )
 
-    # --------------------------------------------------
-    # 3. Calculate centroids in a projected CRS.
-    # --------------------------------------------------
+    # Compute centroids in a metric CRS before converting back to WGS84.
     gdf = gdf.to_crs(epsg=32648)
     gdf["geometry"] = gdf.geometry.centroid
     gdf = gdf.to_crs(epsg=4326)
 
-    # --------------------------------------------------
-    # 4. Determine normalized categories.
-    # --------------------------------------------------
     gdf["category"] = gdf.apply(get_category, axis=1)
     gdf = gdf[gdf["category"].notna()].copy()
 
@@ -130,10 +117,6 @@ def process_pois():
             "HCMUT CS1 must belong to the university category."
         )
 
-    # --------------------------------------------------
-    # 5. Sample each category.
-    #    Ensure HCMUT CS1 is included in university.
-    # --------------------------------------------------
     selected = []
 
     for category, limit in CATEGORY_LIMITS.items():
@@ -147,8 +130,7 @@ def process_pois():
 
         if category == "university":
             if HCMUT_CS1_OSM_ID not in subset.index:
-                # Preserve the first 19 sampled universities.
-                # Replace the last slot with HCMUT CS1.
+                # Include the campus without increasing the category limit.
                 subset = pd.concat([
                     subset.iloc[:limit - 1],
                     campus,
@@ -162,7 +144,7 @@ def process_pois():
         print(f"{category}: {len(subset)} selected")
         selected.append(subset)
 
-    # Preserve OSM indices until mandatory-POI verification.
+    # Preserve OSM indices until mandatory campus inclusion is verified.
     result = pd.concat(selected)
 
     campus_mask = result.index.isin([HCMUT_CS1_OSM_ID])
@@ -174,15 +156,9 @@ def process_pois():
 
     result = result.reset_index(drop=True)
 
-    # --------------------------------------------------
-    # 6. Extract coordinates.
-    # --------------------------------------------------
     result["longitude"] = result.geometry.x
     result["latitude"] = result.geometry.y
 
-    # --------------------------------------------------
-    # 7. Create POI IDs.
-    # --------------------------------------------------
     result.insert(
         0,
         "poi_id",
@@ -201,9 +177,6 @@ def process_pois():
         ].to_string(index=False)
     )
 
-    # --------------------------------------------------
-    # 8. Preserve the original output schema.
-    # --------------------------------------------------
     result = result[
         [
             "poi_id",
@@ -214,9 +187,6 @@ def process_pois():
         ]
     ].copy()
 
-    # --------------------------------------------------
-    # 9. Save.
-    # --------------------------------------------------
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     result.to_csv(OUTPUT_FILE, index=False)
 

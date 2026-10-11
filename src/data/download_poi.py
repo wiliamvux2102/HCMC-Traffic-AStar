@@ -4,7 +4,7 @@ from pathlib import Path
 from shapely.geometry import box
 
 
-# Same area used for the road network
+# Match the road-network query center and nominal extent.
 CENTER_LAT = 10.7769
 CENTER_LON = 106.7009
 DISTANCE = 15000
@@ -23,11 +23,10 @@ def create_bbox():
         dist_type = "bbox"
     """
 
-    # Approximate conversion:
-    # 1 degree latitude ~= 111 km
+    # Approximate one degree of latitude as 111 km.
     delta_lat = DISTANCE / 111000
 
-    # Longitude degree length depends on latitude
+    # Adjust longitude spacing for the query latitude.
     import math
     delta_lon = DISTANCE / (
         111000 * math.cos(math.radians(CENTER_LAT))

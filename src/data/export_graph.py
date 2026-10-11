@@ -9,13 +9,11 @@ OUTPUT_DIR = Path("data/processed")
 def export_graph():
     print("Loading graph...")
 
-    # Load graph 
     G = ox.io.load_graphml(GRAPH_FILE)
 
     print(f"Nodes in graph: {len(G.nodes)}")
     print(f"Edges in graph: {len(G.edges)}")
 
-    # NetworkX -> GeoDataFrame
     nodes, edges = ox.convert.graph_to_gdfs(
         G,
         nodes=True,
@@ -23,10 +21,6 @@ def export_graph():
     )
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    # =========================
-    # Export nodes
-    # =========================
 
     nodes_df = nodes.reset_index()
 
@@ -47,10 +41,7 @@ def export_graph():
         index=False
     )
 
-    # =========================
-    # Export edges
-    # =========================
-
+    # Retain the edge key to distinguish parallel directed edges.
     edges_df = edges.reset_index()
 
     wanted_columns = [
@@ -64,7 +55,7 @@ def export_graph():
         "geometry"
     ]
 
-    # Chỉ lấy những cột thực sự tồn tại trong graph
+    # Optional OSM attributes may be absent from the graph.
     available_columns = [
         col for col in wanted_columns
         if col in edges_df.columns

@@ -33,8 +33,7 @@ OUTPUT_COLUMNS = [
     "distance_to_node_m",
 ]
 
-# Explicit rule for the reviewed Nowzone pair.
-# Match names rather than sequential POI IDs.
+# Identify the reviewed duplicate pair by name rather than sequential POI IDs.
 NOWZONE_KEEP_NAME = "Trung Tâm Mua Sắm Nowzone - Nguyễn Văn Cừ"
 NOWZONE_DROP_NAME = "Trung Tâm Mua Sắm Nowzone"
 NOWZONE_MAX_SEPARATION_M = 30
@@ -97,7 +96,7 @@ def remove_reviewed_duplicates(df):
     print(f"Remove: {drop['poi_id']} - {drop['name']}")
     print(f"POI coordinate separation: {separation:.2f} m")
 
-    # Preserve all other POI IDs and row order.
+    # Preserve the identifiers and order of the remaining POIs.
     return df.drop(index=drop_candidates.index).copy()
 
 
@@ -146,6 +145,7 @@ def validate_mapping():
         ids = df.loc[missing_nodes, "poi_id"].tolist()
         raise ValueError(f"POI tham chiếu node không tồn tại: {ids}")
 
+    # Membership in one strong component guarantees mutual directed reachability.
     outside_scc = ~df["nearest_node"].isin(eligible_nodes["node_id"])
     if outside_scc.any():
         ids = df.loc[outside_scc, "poi_id"].tolist()
@@ -154,7 +154,7 @@ def validate_mapping():
             f"lớn nhất: {ids}. Hãy chạy lại map_poi_to_node.py."
         )
 
-    # Verify stored distances against node coordinates.
+    # Recompute distances to detect mappings inconsistent with the current nodes.
     mapped_nodes = nodes.set_index("node_id").loc[
         df["nearest_node"].to_numpy()
     ]
@@ -206,8 +206,6 @@ def validate_mapping():
             f"Chỉ còn {len(valid)} POI; yêu cầu tối thiểu {MIN_POIS}."
         )
 
-    # All retained POIs are mapped into the same strong component,
-    # so every ordered pair of their road nodes has a directed path.
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     valid.to_csv(OUTPUT_FILE, index=False)
 

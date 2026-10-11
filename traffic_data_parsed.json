@@ -1,6 +1,0 @@
-{
-  "error": {
-    "Message": "User is not authenticated.",
-    "Type": "System.Security.SecurityException"
-  }
-}

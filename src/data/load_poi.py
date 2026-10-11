@@ -18,7 +18,6 @@ def load_pois():
 
     df = pd.read_csv(POI_FILE)
 
-    # 1. Check columns
     missing_columns = [
         col for col in REQUIRED_COLUMNS
         if col not in df.columns
@@ -29,7 +28,6 @@ def load_pois():
             f"Missing columns: {missing_columns}"
         )
 
-    # 2. Check duplicate POI IDs
     if df["poi_id"].duplicated().any():
         duplicates = df[
             df["poi_id"].duplicated(keep=False)
@@ -39,7 +37,6 @@ def load_pois():
             f"Duplicate POI IDs:\n{duplicates}"
         )
 
-    # 3. Check coordinates
     invalid_latitude = ~df["latitude"].between(-90, 90)
     invalid_longitude = ~df["longitude"].between(-180, 180)
 
@@ -49,7 +46,6 @@ def load_pois():
     if invalid_longitude.any():
         raise ValueError("Invalid longitude found.")
 
-    # 4. Check missing values
     if df[REQUIRED_COLUMNS].isnull().any().any():
         raise ValueError("Missing values found in POI data.")
 
