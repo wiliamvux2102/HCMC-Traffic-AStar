@@ -223,6 +223,6 @@ cache/
 
 # temp
 data/raw/osm/hcmc_drive.graphml
-data/processed/edges.csv
-data/processed/nodes.csv
+# data/processed/edges.csv
+# data/processed/nodes.csv
 *.json
