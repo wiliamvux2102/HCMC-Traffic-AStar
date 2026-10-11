@@ -1,0 +1,368 @@
+{
+  "description": "Same A* and graph; free-flow speeds versus recorded replay speeds. Free flow is a baseline, not a captured traffic snapshot.",
+  "cases": [
+    {
+      "start_poi": "POI0053",
+      "goal_poi": "POI0150",
+      "free_flow": {
+        "total_time_s": 1048.2441343557816,
+        "total_distance_m": 16194.527138404828,
+        "expanded_nodes": 28142,
+        "runtime_ms": 304.18829998234287,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 348
+        }
+      },
+      "recorded_traffic_time_s": 2070.7964035017985,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0144",
+      "goal_poi": "POI0028",
+      "free_flow": {
+        "total_time_s": 1122.1723849963876,
+        "total_distance_m": 17312.427628166817,
+        "expanded_nodes": 54733,
+        "runtime_ms": 575.1261000405066,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 528
+        }
+      },
+      "recorded_traffic_time_s": 1964.2633379969438,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0158",
+      "goal_poi": "POI0120",
+      "free_flow": {
+        "total_time_s": 205.181411830212,
+        "total_distance_m": 3748.715236468328,
+        "expanded_nodes": 220,
+        "runtime_ms": 120.09630003012717,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 81
+        }
+      },
+      "recorded_traffic_time_s": 322.48463888991057,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0087",
+      "goal_poi": "POI0086",
+      "free_flow": {
+        "total_time_s": 604.7960841812518,
+        "total_distance_m": 9694.779301433658,
+        "expanded_nodes": 4832,
+        "runtime_ms": 165.75129999546334,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 215
+        }
+      },
+      "recorded_traffic_time_s": 969.9756597489844,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0093",
+      "goal_poi": "POI0011",
+      "free_flow": {
+        "total_time_s": 74.08662441506299,
+        "total_distance_m": 742.0644399554474,
+        "expanded_nodes": 215,
+        "runtime_ms": 148.49599997978657,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 26
+        }
+      },
+      "recorded_traffic_time_s": 110.77771952932883,
+      "path_changed": false
+    },
+    {
+      "start_poi": "POI0107",
+      "goal_poi": "POI0117",
+      "free_flow": {
+        "total_time_s": 927.8543364239295,
+        "total_distance_m": 13077.070810822188,
+        "expanded_nodes": 46531,
+        "runtime_ms": 549.1474999580532,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 466
+        }
+      },
+      "recorded_traffic_time_s": 1807.1405871646148,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0057",
+      "goal_poi": "POI0140",
+      "free_flow": {
+        "total_time_s": 871.8404205237708,
+        "total_distance_m": 11401.961767644105,
+        "expanded_nodes": 32618,
+        "runtime_ms": 358.8609999860637,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 364
+        }
+      },
+      "recorded_traffic_time_s": 1735.7419291516017,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0087",
+      "goal_poi": "POI0133",
+      "free_flow": {
+        "total_time_s": 846.4125569159751,
+        "total_distance_m": 13704.476402330743,
+        "expanded_nodes": 19507,
+        "runtime_ms": 242.77350003831089,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 296
+        }
+      },
+      "recorded_traffic_time_s": 1260.1993215759778,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0027",
+      "goal_poi": "POI0064",
+      "free_flow": {
+        "total_time_s": 1213.4212342403146,
+        "total_distance_m": 18354.620904187646,
+        "expanded_nodes": 26995,
+        "runtime_ms": 381.61049998598173,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 506
+        }
+      },
+      "recorded_traffic_time_s": 2131.105329180012,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0050",
+      "goal_poi": "POI0039",
+      "free_flow": {
+        "total_time_s": 978.1088254127519,
+        "total_distance_m": 14602.391873982233,
+        "expanded_nodes": 33245,
+        "runtime_ms": 420.4695000080392,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 393
+        }
+      },
+      "recorded_traffic_time_s": 2081.266896972164,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0159",
+      "goal_poi": "POI0127",
+      "free_flow": {
+        "total_time_s": 850.5961236205254,
+        "total_distance_m": 11717.296348417609,
+        "expanded_nodes": 39162,
+        "runtime_ms": 388.3981000399217,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 434
+        }
+      },
+      "recorded_traffic_time_s": 1552.0669742454575,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0038",
+      "goal_poi": "POI0045",
+      "free_flow": {
+        "total_time_s": 2266.470650565956,
+        "total_distance_m": 33860.13227004843,
+        "expanded_nodes": 193781,
+        "runtime_ms": 1661.4178000018,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 984
+        }
+      },
+      "recorded_traffic_time_s": 3872.2783593969702,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0156",
+      "goal_poi": "POI0085",
+      "free_flow": {
+        "total_time_s": 1123.5025839903697,
+        "total_distance_m": 17300.54501667369,
+        "expanded_nodes": 54893,
+        "runtime_ms": 495.9067999734543,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 328
+        }
+      },
+      "recorded_traffic_time_s": 1653.9238130848762,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0151",
+      "goal_poi": "POI0133",
+      "free_flow": {
+        "total_time_s": 1259.4031142346375,
+        "total_distance_m": 21268.736414942865,
+        "expanded_nodes": 64092,
+        "runtime_ms": 623.6399000044912,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 459
+        }
+      },
+      "recorded_traffic_time_s": 2175.34178486331,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0089",
+      "goal_poi": "POI0046",
+      "free_flow": {
+        "total_time_s": 1994.9787643828165,
+        "total_distance_m": 27536.55135535074,
+        "expanded_nodes": 105799,
+        "runtime_ms": 829.9684000085108,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 715
+        }
+      },
+      "recorded_traffic_time_s": 3262.8238507890596,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0159",
+      "goal_poi": "POI0035",
+      "free_flow": {
+        "total_time_s": 229.6356062441612,
+        "total_distance_m": 3164.8107566928134,
+        "expanded_nodes": 2827,
+        "runtime_ms": 113.73690003529191,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 129
+        }
+      },
+      "recorded_traffic_time_s": 497.8286787632724,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0035",
+      "goal_poi": "POI0115",
+      "free_flow": {
+        "total_time_s": 194.5630429359467,
+        "total_distance_m": 2765.8322352116984,
+        "expanded_nodes": 2072,
+        "runtime_ms": 119.40480000339448,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 129
+        }
+      },
+      "recorded_traffic_time_s": 482.5337236463439,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0048",
+      "goal_poi": "POI0155",
+      "free_flow": {
+        "total_time_s": 241.62876846255946,
+        "total_distance_m": 2699.836906969587,
+        "expanded_nodes": 1914,
+        "runtime_ms": 94.93640001164749,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 166
+        }
+      },
+      "recorded_traffic_time_s": 413.8346617587477,
+      "path_changed": false
+    },
+    {
+      "start_poi": "POI0002",
+      "goal_poi": "POI0145",
+      "free_flow": {
+        "total_time_s": 216.619367724113,
+        "total_distance_m": 3234.2379850389775,
+        "expanded_nodes": 1758,
+        "runtime_ms": 120.57859997730702,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 95
+        }
+      },
+      "recorded_traffic_time_s": 525.2206096689949,
+      "path_changed": true
+    },
+    {
+      "start_poi": "POI0019",
+      "goal_poi": "POI0023",
+      "free_flow": {
+        "total_time_s": 789.913866319291,
+        "total_distance_m": 10703.918391578572,
+        "expanded_nodes": 23220,
+        "runtime_ms": 260.86439995560795,
+        "snapshot_timestamp": "2026-10-11T12:12:18+07:00",
+        "traffic_mode": "FALLBACK",
+        "found": true,
+        "provenance_counts": {
+          "fallback": 375
+        }
+      },
+      "recorded_traffic_time_s": 1612.8057047680088,
+      "path_changed": true
+    }
+  ],
+  "changed_route_cases": 18,
+  "mean_freeflow_time_s": 852.9714950887907,
+  "mean_recorded_time_s": 1525.120499234819
+}
