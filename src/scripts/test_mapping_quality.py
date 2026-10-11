@@ -3,7 +3,8 @@ import pandas as pd
 
 MAPPING_PATH = (
     "data/traffic/mapping/"
-    "00-25-14-grid-mapping.csv"
+    "2026-10-11/"
+    "03-57-24-mapping.csv"
 )
 
 
