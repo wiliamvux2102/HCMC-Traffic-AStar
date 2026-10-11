@@ -179,6 +179,21 @@ flowchart TD
 | `app/` | Flask application and frontend |
 | `tests/` | Automated tests |
 
+## Routing evaluation
+
+Install the test dependencies and run from the repository root:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python experiments/run_tests.py
+python experiments/evaluate_routing.py
+```
+
+The results used in Section 9 are stored in `experiments/results/evaluation/`.
+They retain costs, search measurements and heuristic checks without duplicating
+complete route paths. See [the experiment documentation](experiments/results/README.md)
+for the dataset requirements, measurement method and output options.
+
 ### Data and routing contracts
 
 Edges retain their full `(source, target, edge_key)` identity. POIs are mapped to their nearest eligible node within the largest strongly connected component using a unit-sphere KD-tree.
@@ -234,4 +249,4 @@ Contributions cover data preparation, traffic processing, routing and evaluation
 
 Built with OpenStreetMap, OSMnx, NetworkX, pandas, GeoPandas, SciPy, Flask, Leaflet, and HERE traffic services.
 
-Map data attribution: **© OpenStreetMap contributors**. 
+Map data attribution: **© OpenStreetMap contributors**.
