@@ -184,12 +184,11 @@ flowchart TD
 Install the test dependencies and run from the repository root:
 
 ```bash
-python -m pip install -r requirements-dev.txt
 python experiments/run_tests.py
 python experiments/evaluate_routing.py
 ```
 
-The results used in Section 9 are stored in `experiments/results/evaluation/`.
+The results are stored in `experiments/results/evaluation/`.
 They retain costs, search measurements and heuristic checks without duplicating
 complete route paths. See [the experiment documentation](experiments/results/README.md)
 for the dataset requirements, measurement method and output options.

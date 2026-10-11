@@ -15,3 +15,6 @@ geopandas
 shapely 
 pyproj
 scipy
+
+pytest
+pytest-subtests

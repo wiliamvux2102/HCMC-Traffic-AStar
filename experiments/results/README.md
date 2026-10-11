@@ -1,6 +1,6 @@
 # Experimental results
 
-The `evaluation/` directory contains the measurements used in Section 9 of the report:
+The `evaluation/` directory contains:
 
 - `metadata.json`: dataset checks, input hashes, environment, POI pairs and timing method.
 - `routing-results.json`: heuristic verification and A*/Dijkstra measurements for each pair and snapshot.
@@ -16,7 +16,6 @@ output does not change route costs, optimality checks or route-change indicators
 From the repository root, install the test dependencies and run:
 
 ```powershell
-python -m pip install -r requirements-dev.txt
 python experiments/run_tests.py
 python experiments/evaluate_routing.py
 ```
