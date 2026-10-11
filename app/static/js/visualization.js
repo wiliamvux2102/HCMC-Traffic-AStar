@@ -806,6 +806,11 @@
         state.ui.routePlaceholder.hidden = false;
         state.ui.clearRouteBtn.hidden = true;
         updateLayerVisibility('route', false);
+
+        // Clear POI selection inputs and update direction button state
+        if (state.ui.startPoiSelect) state.ui.startPoiSelect.value = '';
+        if (state.ui.endPoiSelect) state.ui.endPoiSelect.value = '';
+        updateRouteButtonState();
     }
 
     /** Look up a POI's display name by its ID from the loaded POI list. */
